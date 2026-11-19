@@ -1,0 +1,1605 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#080f15">
+<title>Japan Drive Sim — Beta 0.9 Horizon Scenic</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{color-scheme:dark;--bg:#080f15;--panel:#101d27;--line:#2d414e;--muted:#9db0bc;--accent:#67e0c1;--amber:#ffca70;--red:#ff6f69}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:#edf5f7;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select,input{font:inherit;color:inherit;background:#14232d;border:1px solid #425967;border-radius:9px;padding:9px}
+button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.4}.primary{background:#176c5d;border-color:#269b83}.wide{width:100%}
+header{height:48px;padding:5px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #263a45;background:#0b151d}
+header h1{font-size:15px;letter-spacing:.08em;margin:0}header small{font-size:10px;color:#9db0bc}.tag{font-size:10px;color:#9ff1d9;background:#17453e;border-radius:20px;padding:3px 8px;margin-left:7px}
+.app{height:calc(100dvh - 48px);display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0}
+.game{position:relative;min-width:0;min-height:0;background:#172630;overflow:hidden}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#sceneFallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;background:linear-gradient(#92b3c2,#d4d9c9 48%,#65785f);color:#10202a}
+.hudtop{position:absolute;left:14px;top:12px;display:flex;gap:8px;align-items:flex-start;pointer-events:none}
+.hudcard{background:#07121bdc;border:1px solid #71838a66;border-radius:11px;padding:9px 12px;backdrop-filter:blur(8px);box-shadow:0 4px 18px #0004}
+.speedblock{min-width:116px}.speednum{font-size:39px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-2px}.unit{font-size:11px;color:#b7c7ce}.gear{font-size:25px;font-weight:800;color:#9ff1d9}.rpmbar{width:175px;height:5px;background:#40515a;border-radius:5px;margin-top:7px;overflow:hidden}.rpmbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#65d9b6,#ffca70,#ff6868)}
+#miniMap{position:absolute;right:12px;top:12px;width:min(30vw,270px);height:min(27vh,195px);min-width:175px;min-height:135px;border:2px solid #d7e3e6;border-radius:12px;overflow:hidden;box-shadow:0 6px 22px #0008;z-index:700;background:#dce5e5;pointer-events:auto;touch-action:pan-x pan-y}#miniMap.pick-active{width:calc(100% - 24px);height:calc(100% - 24px);z-index:850;border-color:#67e0c1;box-shadow:0 0 0 3px #67e0c155,0 8px 30px #000b}
+#miniMap .leaflet-control-attribution{font-size:7px!important}#miniMap .leaflet-control-zoom{display:none}
+.collision-banner{position:absolute;z-index:800;left:50%;top:28%;transform:translate(-50%,-50%) scale(.96);padding:13px 22px;border:2px solid #ff6f69;border-radius:14px;background:#451b20ee;color:#fff;font-size:20px;font-weight:850;letter-spacing:.08em;box-shadow:0 8px 32px #0009;opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;text-align:center;white-space:nowrap}.collision-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.collision-banner small{display:block;font-size:11px;font-weight:600;letter-spacing:0;margin-top:3px}.navprompt{position:absolute;top:195px;right:14px;max-width:240px;background:#07121bdc;border:1px solid #71838a66;border-radius:10px;padding:9px 12px;text-align:right;pointer-events:none}
+.navprompt b{display:block;font-size:15px}.navprompt small{color:#b6c6ce}
+.hudbottom{position:absolute;left:14px;right:14px;bottom:12px;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}
+.hint{background:#07121bdc;border:1px solid #71838a66;border-radius:10px;padding:8px 12px;max-width:42%;font-size:11px;color:#d9e7eb}
+.drive-controls{position:relative;z-index:860;display:flex;align-items:flex-end;gap:14px;pointer-events:auto}
+.steerpad{width:118px;height:118px;border-radius:50%;border:2px solid #d7e6e5aa;background:radial-gradient(circle,#263e49dd,#09151bdc 68%);position:relative;touch-action:none;box-shadow:0 5px 20px #0008}
+.steerpad:before,.steerpad:after{content:"";position:absolute;background:#b8cbd1aa;border-radius:4px}.steerpad:before{width:72px;height:9px;left:21px;top:52px}.steerpad:after{width:9px;height:48px;left:52px;top:20px}
+.steer-knob{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;background:#8de7d0;border:2px solid #fff;box-shadow:0 0 10px #65e3c5;z-index:2;pointer-events:none}
+.pedals{display:flex;gap:9px}.pedal{width:70px;height:104px;border-radius:12px;border:1px solid #c1d1d477;background:linear-gradient(145deg,#263a45ed,#0b161deF);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:750;touch-action:none;user-select:none;box-shadow:0 5px 18px #0008}
+.pedal .pedalicon{font-size:25px}.pedal.gas.active{border-color:#64e5bd;background:#176452}.pedal.brake.active{border-color:#ff8076;background:#762e31}
+.sidebuttons{display:flex;flex-direction:column;gap:6px}.sidebuttons button{font-size:10px;padding:7px 9px;background:#0b171fdd}
+.signal-on{color:#ffd36f!important;border-color:#ffd36f!important;background:#3c3420!important}.sidebuttons button:active{transform:scale(.96);filter:brightness(1.35)}
+.panel{background:#0d1820;border-left:1px solid #263b47;overflow:auto;padding:10px;min-width:0}
+.group{background:#13232d;border:1px solid #2c424e;border-radius:11px;padding:10px;margin-bottom:9px}
+.group h2{font-size:12px;margin:0 0 8px;color:#d9e9ec}.group p{font-size:10px;color:var(--muted);line-height:1.5;margin:7px 0}
+.group select,.group input[type=range]{width:100%;min-width:0}.row{display:flex;gap:6px;align-items:center;margin:6px 0}.row>*{min-width:0;flex:1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.stat{background:#09151c;border-radius:8px;padding:7px}.stat b{font-size:17px;display:block}.stat small{font-size:9px;color:var(--muted)}
+.muted{font-size:10px;color:var(--muted);line-height:1.45}.status{font-size:10px;color:#c3d2d8;min-height:18px;line-height:1.4}
+.check{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}.check input{width:auto}
+.filebtn{position:relative;display:block;text-align:center;border:1px solid #425967;border-radius:8px;padding:8px;font-size:11px}.filebtn input{position:absolute;inset:0;opacity:0}
+.keyrow{display:flex;justify-content:space-between;gap:5px;margin-top:6px}.keyrow button{font-size:10px;padding:7px}
+#routeStatus{font-size:10px;color:#c4d4da;min-height:18px}.stepbox{font-size:10px;line-height:1.5;background:#0b171f;padding:8px;border-radius:8px;margin-top:6px}
+#mapFull{height:180px;border-radius:8px;overflow:hidden;display:none}
+@media(max-width:850px){.app{grid-template-columns:minmax(0,1fr) 255px}.panel{padding:7px}.group{padding:8px}.hudbottom{left:8px;right:8px}.hint{display:none}.drive-controls{gap:8px}.steerpad{width:96px;height:96px;flex:0 0 96px}.steerpad:before{width:58px;left:17px;top:42px}.steerpad:after{height:39px;left:42px;top:17px}.pedal{width:58px;height:88px;flex:0 0 58px}.pedals{gap:6px}.sidebuttons{gap:4px}.sidebuttons button{font-size:9px;padding:6px 7px}}
+@media(max-width:650px){header{height:40px}.app{height:calc(100dvh - 40px);display:block}.panel{position:absolute;z-index:900;right:8px;top:8px;width:min(285px,75vw);max-height:45%;border:1px solid #536b76;border-radius:12px;background:#0b171fee;backdrop-filter:blur(10px);display:none}.panel.open{display:block}.mobile-menu{display:block!important}.hudtop{left:8px;top:8px}.speednum{font-size:32px}.rpmbar{width:130px}#miniMap{right:8px;top:8px;width:145px;height:118px;min-width:0;min-height:0}.navprompt{top:137px;right:8px;max-width:180px}.hudbottom{left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));gap:6px}.hint{max-width:34%;font-size:9px}.drive-controls{gap:7px}.steerpad{width:94px;height:94px}.steerpad:before{width:58px;left:16px;top:41px}.steerpad:after{height:39px;left:41px;top:15px}.pedal{width:55px;height:85px;font-size:11px}.pedal .pedalicon{font-size:20px}.sidebuttons{gap:4px}.sidebuttons button{padding:6px;font-size:9px}.mobile-menu{display:block!important;position:absolute;z-index:1000;right:8px;top:137px;background:#08141cdd;border:1px solid #8aa0a9;border-radius:8px;padding:7px 10px;font-size:10px}}
+@media(max-height:520px) and (orientation:landscape){header{height:34px;padding:3px 10px}.app{height:calc(100dvh - 34px)}.hudbottom{bottom:5px}.steerpad{width:84px;height:84px}.pedal{height:72px}.navprompt{top:132px}.panel{max-height:60%}}
+@media(orientation:portrait) and (max-width:650px){.hudbottom{align-items:flex-end}.hint{display:none}.drive-controls{width:100%;justify-content:space-between}}
+
+/* Beta 0.6 visual polish */
+:root{--bg:#071018;--panel:#0d1b25;--line:#294452;--accent:#78e6ca;--amber:#ffd27b}
+header{background:linear-gradient(110deg,#0b1821,#122a35 65%,#0b1821);border-bottom-color:#35515d}
+header h1{font-weight:850;letter-spacing:.12em}
+.tag{background:linear-gradient(120deg,#176f61,#215e79);color:#d9fff5}
+.hudcard{background:linear-gradient(145deg,#07151eeF,#0c222be8);border-color:#9ab5bd55;box-shadow:0 8px 26px #0005, inset 0 1px #ffffff12}
+.speednum{font-variant-numeric:tabular-nums;text-shadow:0 2px 16px #73e8ca55}
+.panel{background:linear-gradient(180deg,#0d1b25,#09131b)}
+.group{background:linear-gradient(145deg,#142833,#10212b);border-color:#385360;box-shadow:0 5px 16px #0002}
+.group h2{font-size:12px;letter-spacing:.04em;color:#a9f0dc}
+button,select{transition:filter .15s,transform .15s,border-color .15s}
+button:active{filter:brightness(1.2);transform:translateY(1px)}
+.primary{background:linear-gradient(135deg,#167b69,#145b66);border-color:#48b69c;box-shadow:0 3px 12px #0d9c7c22}
+.drive-controls .sidebuttons button{min-width:66px;border-color:#516b76;background:linear-gradient(145deg,#172c37ed,#08151ddd);box-shadow:0 3px 10px #0005}
+#autoDrive.active{background:linear-gradient(135deg,#1b806d,#17566a);border-color:#80ecd2;color:#eafff9}
+#timeScale{width:100%;accent-color:#78e6ca}
+.autopilot-state{font-size:10px;color:#9eead7;min-height:15px;margin-top:5px}
+.sign-debug{display:none}
+
+
+/* Beta 0.7 — scenic-road visual pass (original art direction, mobile-first) */
+:root{--bg:#07131b;--panel:#0b1b25;--line:#34505b;--accent:#8df0d1;--amber:#ffd17a;--red:#ff716b}
+header{height:46px;padding:5px 16px;background:linear-gradient(100deg,#07151d 0%,#163b49 52%,#0a1821 100%);border-bottom:1px solid #82c4c455;box-shadow:0 5px 22px #0003;position:relative;z-index:20}
+header h1{font-size:14px;letter-spacing:.15em;font-weight:900;text-shadow:0 2px 12px #65d8c755}
+header small{letter-spacing:.08em;color:#b5cbd0}
+.tag{background:linear-gradient(120deg,#146c60,#236b82);border:1px solid #8be8d044;color:#e4fff7}
+.hudcard{border:1px solid #b9e2df55;border-radius:13px;background:linear-gradient(145deg,#06141beF,#0c2832e8);box-shadow:0 12px 30px #0005,inset 0 1px #ffffff18;backdrop-filter:blur(12px)}
+.speednum{text-shadow:0 0 22px #7ee9d866;font-size:42px}
+.navprompt{border:1px solid #a4d6d455;border-radius:13px;background:linear-gradient(145deg,#071820eF,#10303be8);box-shadow:0 10px 28px #0005;backdrop-filter:blur(12px)}
+.panel{background:linear-gradient(180deg,#0c1d27,#08141c);border-left-color:#3b5a66}
+.group{background:linear-gradient(145deg,#132b36,#0d202a);border:1px solid #42616c;border-radius:13px;box-shadow:0 7px 20px #0003,inset 0 1px #ffffff0a}
+.group h2{color:#9cebd6;letter-spacing:.07em}
+button,select{border-radius:10px;border-color:#52717d;background:linear-gradient(145deg,#1a3440,#10232d)}
+.primary{background:linear-gradient(120deg,#16806c,#17627a);border-color:#48bba2;box-shadow:0 4px 14px #0b806544}
+.steerpad{border-color:#d6f4e9aa;background:radial-gradient(circle,#41616bde,#08171feF 69%);box-shadow:0 7px 24px #0009,inset 0 0 20px #9be8d522}
+.pedal{border-radius:14px;background:linear-gradient(145deg,#314c58f2,#0b1b25f2);box-shadow:0 7px 24px #0008,inset 0 1px #ffffff20}
+.collision-banner{border-radius:16px;box-shadow:0 0 0 5px #ff716b22,0 12px 40px #000b}
+#miniMap{border:2px solid #b9e4df;border-radius:14px;box-shadow:0 8px 28px #0009}
+@media(max-width:650px){header{height:38px;padding:3px 9px}header h1{font-size:12px}.speednum{font-size:34px}}
+
+.limitcard{display:flex;gap:10px;align-items:center}.limitsign{width:46px;height:46px;border-radius:50%;background:#fff;border:6px solid #c92830;color:#111;display:flex;align-items:center;justify-content:center;font-size:17px}.limitsign.over{animation:lb .5s infinite alternate}@keyframes lb{to{background:#ffd3d0}}
+.pickcancel{display:none;position:absolute;z-index:900;right:22px;bottom:16px;padding:10px 16px;background:#451b20;border-color:#ff6f69}#miniMap.pick-active:after{content:"点击地图选点";position:absolute;z-index:1000;left:10px;bottom:10px;background:#07121bdd;padding:6px 10px;border-radius:8px;pointer-events:none}
+</style>
+</head>
+<body>
+<header><div><h1>JAPAN DRIVE SIM <span class="tag">BETA 0.10 · C1 TEST</span></h1><small>JAPAN OPEN ROAD · REAL ROUTE GEOMETRY · SCENIC DRIVE</small></div><small>日本道路环境 · 轻量化开放世界3D</small></header>
+<div class="app">
+<main class="game" id="game">
+<canvas id="scene"></canvas>
+<div id="sceneFallback"><div><b>3D 场景暂时无法加载</b><p>请检查网络连接，确认 Three.js CDN 可访问后刷新页面。</p></div></div>
+<div class="hudtop">
+ <div class="hudcard speedblock"><div class="speednum"><span id="speed">0</span><span class="unit"> km/h</span></div><div class="unit">SPEED</div></div>
+ <div class="hudcard"><div><span class="gear" id="gear">1</span> <span class="unit">AT</span></div><div class="unit"><span id="rpm">850</span> RPM</div><div class="rpmbar"><i id="rpmBar"></i></div></div>
+ <div class="hudcard limitcard"><div class="limitsign" id="limitSign"><b id="limitNum">40</b></div><div><div class="unit" id="roadKind">一般道路</div><div class="unit">安全分 <b id="score">100</b></div></div></div>
+</div>
+<div id="miniMap" aria-label="导航小地图"></div><button id="pickCancel" class="pickcancel">取消选点</button>
+<div id="collisionBanner" class="collision-banner" role="status" aria-live="assertive">碰撞！<small>请注意对向来车</small></div>
+<button id="c1Quick" class="primary" style="position:absolute;left:14px;top:96px;z-index:860;padding:8px 12px">🛣 C1 高架测试区</button><div class="navprompt"><b id="navText">自由驾驶 · 练习道路</b><small id="navDistance">选择路线可同步真实道路导航</small></div>
+<div class="hudbottom">
+ <div class="hint" id="driveHint">W / ↑ 油门　S / ↓ 刹车<br>A D / ← → 转向　空格暂停</div>
+ <div class="drive-controls">
+  <div class="steerpad" id="steerPad" aria-label="拖动方向盘"><div class="steer-knob" id="steerKnob"></div></div>
+  <div class="sidebuttons"><button id="signalL">◀ 转向灯</button><button id="hazard">双闪</button><button id="signalR">转向灯 ▶</button><button id="viewBtn">视角切换</button><button id="autoDriveQuick">自动驾驶</button></div>
+  <div class="pedals"><button class="pedal" id="brake"><span class="pedalicon">▾</span>刹车</button><button class="pedal" id="gas"><span class="pedalicon">▲</span>油门</button></div>
+ </div>
+</div>
+<button class="mobile-menu" id="menuBtn" style="display:none">地图 / 设置</button>
+</main>
+<aside class="panel" id="panel">
+<section class="group"><h2>① 日本地区 / OSM 道路</h2><select id="pref"></select><div class="row"><label class="muted">下载道路类别</label><select id="roadClass"><option value="major">主要道路</option><option value="pref">都道府县道（OSM ref 标记）</option><option value="local">一般道路</option><option value="all">全部道路</option></select></div><div class="row"><label class="muted">场景道路风格</label><select id="roadType"><option value="auto" selected>自动（随路线类型变化）</option><option value="local">一般道路</option><option value="pref">都道府县道</option><option value="national">国道</option><option value="expressway">高速道路</option></select></div><div class="row"><button class="primary wide" id="loadRoads">下载道路</button></div><div class="row"><label class="muted">地图底图</label><select id="tileSel"></select></div><label class="check"><input type="checkbox" id="viewOnly" checked>仅下载当前地图视野（推荐，更快）</label><label class="check"><input type="checkbox" id="allRoads">包含一般道路（数据量较大）</label><div class="status" id="dataStatus">选择地区和道路类别后下载。都道府县道依赖 OSM ref 标记完整度。支持 IndexedDB 缓存。</div><div class="row"><button id="downloadGeo" disabled>导出 GeoJSON</button><label class="filebtn">导入 GeoJSON<input id="importGeo" type="file" accept=".json,.geojson,application/json"></label></div></section>
+<section class="group"><h2>② 地图选点 / OSRM 路线</h2><div class="row"><button id="pickStart">选起点</button><button id="pickEnd">选终点</button></div><div id="routeStatus">未规划路线。可先自由驾驶。</div><div class="row"><label class="muted">路线偏好</label><select id="routePref"><option value="mixed" selected>混合（最快）</option><option value="highway">优先高速</option><option value="local">仅普通道路</option></select></div><button class="primary wide" id="routeBtn" disabled>规划驾车路线</button><div class="stepbox" id="nextStep">路线导航步骤会显示在这里。</div><div class="row"><button id="startDrive" class="primary">开始 / 继续</button><button id="resetDrive">重置驾驶</button></div><div class="row"><button id="pause">暂停</button><button id="freeMode">自由驾驶模式</button></div><button class="wide" id="newTrip">重新选择起终点</button><button class="wide" id="c1Test">首都高C1 测试区（估算 L1）</button></section>
+<section class="group"><h2>③ 自动驾驶 / 时间倍速</h2><button id="autoDrive" class="primary wide">启动自动驾驶</button><div class="autopilot-state" id="autoState">自动驾驶关闭 · 可随时接管方向盘</div><div class="row"><label class="muted">模拟时间</label><select id="timeScale"><option value="1">1× 正常</option><option value="2">2× 加速</option><option value="4" selected>4× 快进</option><option value="8">8× 快进</option></select></div><p>自动驾驶会跟随道路、保持左侧车道，并根据前车距离减速。倍速会同时加快路程与交通流，仪表显示的仍是车辆实际模拟速度。</p></section>
+<section class="group"><h2>④ 交通流量情境（模拟）</h2><div class="row"><label class="muted">星期</label><select id="dayType"><option value="weekday">工作日</option><option value="weekend">周末 / 节假日</option></select></div><div class="row"><label class="muted">时间</label><select id="hour"><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8" selected>08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option></select></div><input id="trafficScale" type="range" min="50" max="150" value="100"><div class="muted">流量强度 <b id="trafficScaleLabel">100%</b> · 算法模拟，不代表实时交通</div></section>
+<section class="group"><h2>⑤ 驾驶状态</h2><div class="stats"><div class="stat"><b id="distance">0.00</b><small>行驶 km</small></div><div class="stat"><b id="frontGap">—</b><small>前车距离 m</small></div><div class="stat"><b id="roadState">正常</b><small>状态</small></div></div><p id="physicsNote">油门持续加速；松开后滚阻减速；刹车提供更强制动力。自动挡。</p></section>
+<section class="group"><h2>⑤ 使用说明</h2><p>iPad 横屏建议全屏使用。拖动方向盘控制转向，按住油门 / 刹车持续操作。键盘支持 WASD、方向键、Q/E 转向灯、空格暂停。</p><p>真实路线导航模式使用 OSRM 路线几何作为 3D 道路中心线；自由驾驶模式使用程序生成的连续弯道练习道路。沿线地景按道路类型（高速／国道／县道／一般道）与地貌（市区／住宅区／田园／山林）程序化生成，标志采用日本道路标识样式，目的地文字取自 OSRM 路线；并非逐物件实景复刻。红灯、一時停止与超速会扣安全分。</p><p>地图 © OpenStreetMap contributors · 路线服务 OSRM 公共演示实例。公共服务可能限流，请勿用于实际导航。</p></section>
+</aside>
+</div>
+<!-- 依赖加载（0.13）：先 CDN；失败时用本地 vendor/（由 setup_vendor.bat 在你的电脑上下载，含许可证文件；本项目不内置第三方代码）。来源记录在 window.__depSource -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>window.__depSource={leaflet:window.L?'cdn':null,three:null};if(!window.L)document.write('<link rel="stylesheet" href="vendor/leaflet/leaflet.css"><script src="vendor/leaflet/leaflet.js"><\/script>')</script>
+<script>if(!window.__depSource.leaflet)window.__depSource.leaflet=window.L?'local-vendor':'missing'</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>window.__depSource.three=window.THREE?'cdn':null;if(!window.THREE)document.write('<script src="vendor/three.min.js"><\/script>')</script>
+<script>if(!window.__depSource.three)window.__depSource.three=window.THREE?'local-vendor':'missing';if(window.THREE&&THREE.REVISION!=='160')console.warn('three.js 版本不是 r160：'+THREE.REVISION)</script>
+<script>
+/* road3d.js — 三维道路几何核心（无 Three.js 依赖，可在 Node 单元测试）
+ * 坐标：x 东、z 南（与 index.html 一致），y 向上，单位米。
+ * 每个 Road 带 accuracy 标记：'L1'=仅路网生成/估算, 'L2'=含高程与属性, 'L3'=人工校正。
+ */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(); else root.Road3D = factory(); })(this, function () {
+  'use strict';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+
+  /* ---- 1. 中心线平滑：centripetal Catmull-Rom 重采样，返回等间距点 ---- */
+  function resample(pts, step = 2) {
+    if (pts.length < 2) return pts.map(p => ({ x: p[0], z: p[1] }));
+    const P = [pts[0], ...pts, pts[pts.length - 1]], out = [];
+    const d = (a, b) => Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]), .5) || 1e-6;
+    for (let i = 1; i < P.length - 2; i++) {
+      const p0 = P[i - 1], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2];
+      const t0 = 0, t1 = t0 + d(p0, p1), t2 = t1 + d(p1, p2), t3 = t2 + d(p2, p3);
+      const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+      for (let k = 0; k < n; k++) {
+        const t = t1 + (t2 - t1) * k / n, pt = [0, 0];
+        for (let c = 0; c < 2; c++) {
+          const A1 = (t1 - t) / (t1 - t0) * p0[c] + (t - t0) / (t1 - t0) * p1[c];
+          const A2 = (t2 - t) / (t2 - t1) * p1[c] + (t - t1) / (t2 - t1) * p2[c];
+          const A3 = (t3 - t) / (t3 - t2) * p2[c] + (t - t2) / (t3 - t2) * p3[c];
+          const B1 = (t2 - t) / (t2 - t0) * A1 + (t - t0) / (t2 - t0) * A2;
+          const B2 = (t3 - t) / (t3 - t1) * A2 + (t - t1) / (t3 - t1) * A3;
+          pt[c] = (t2 - t) / (t2 - t1) * B1 + (t - t1) / (t2 - t1) * B2;
+        }
+        out.push({ x: pt[0], z: pt[1] });
+      }
+    }
+    const L = pts[pts.length - 1]; out.push({ x: L[0], z: L[1] });
+    // 再按弧长等距重采样
+    const cum = [0]; for (let i = 1; i < out.length; i++) cum[i] = cum[i - 1] + Math.hypot(out[i].x - out[i - 1].x, out[i].z - out[i - 1].z);
+    const tot = cum[cum.length - 1], N = Math.max(2, Math.round(tot / step)), res = [];
+    let j = 0;
+    for (let k = 0; k <= N; k++) {
+      const s = tot * k / N; while (j < cum.length - 2 && cum[j + 1] < s) j++;
+      const u = (s - cum[j]) / ((cum[j + 1] - cum[j]) || 1);
+      res.push({ s, x: out[j].x + (out[j + 1].x - out[j].x) * u, z: out[j].z + (out[j + 1].z - out[j].z) * u });
+    }
+    return res;
+  }
+
+  /* ---- 2. 纵断面：控制点 (s,y) -> 限制最大纵坡的平滑高程 ---- */
+  function profile(ctrl, total, step, maxGrade = 0.05) {
+    const n = Math.round(total / step) + 1, y = new Float64Array(n);
+    const c = ctrl.slice().sort((a, b) => a.s - b.s);
+    for (let i = 0; i < n; i++) {
+      const s = i * step; let k = 0; while (k < c.length - 2 && c[k + 1].s < s) k++;
+      const a = c[k], b = c[Math.min(k + 1, c.length - 1)], u = b.s === a.s ? 0 : (s - a.s) / (b.s - a.s);
+      y[i] = a.y + (b.y - a.y) * smooth(u);           // S 形竖曲线（端点坡度为 0）
+    }
+    // 纵坡限幅（两遍，保证坡度不超过 maxGrade）
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 1; i < n; i++) y[i] = clamp(y[i], y[i - 1] - maxGrade * step, y[i - 1] + maxGrade * step);
+      for (let i = n - 2; i >= 0; i--) y[i] = clamp(y[i], y[i + 1] - maxGrade * step, y[i + 1] + maxGrade * step);
+    }
+    return y;
+  }
+
+  /* ---- 3. 曲率、超高（横坡）----
+   * 超高 e = clamp(0.8·v²/(127·R) , 0, 0.06) （v: 设计速度 km/h，R: 半径 m），方向与弯向一致 */
+  function frames(pl, ys, designKmh = 60) {
+    const n = pl.length, F = [];
+    for (let i = 0; i < n; i++) {
+      const a = pl[Math.max(0, i - 1)], b = pl[Math.min(n - 1, i + 1)];
+      let tx = b.x - a.x, tz = b.z - a.z; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+      F.push({ s: pl[i].s, x: pl[i].x, z: pl[i].z, y: ys[i], tx, tz, nx: -tz, nz: tx });
+    }
+    for (let i = 1; i < n - 1; i++) {
+      const A = F[i - 1], B = F[i + 1], ds = (B.s - A.s) || 1;
+      const dth = Math.atan2(A.tx * B.tz - A.tz * B.tx, A.tx * B.tx + A.tz * B.tz);   // 有符号转角
+      F[i].k = dth / ds;                                                               // 曲率 1/m
+      F[i].grade = (B.y - A.y) / ds;
+    }
+    F[0].k = F[1].k; F[n - 1].k = F[n - 2].k; F[0].grade = F[1].grade; F[n - 1].grade = F[n - 2].grade;
+    for (const f of F) {
+      const R = 1 / Math.max(1e-6, Math.abs(f.k)), e = clamp(0.8 * designKmh * designKmh / (127 * R), 0, .06);
+      f.bank = Math.sign(f.k) * -e;          // 法线向左为正，弯内侧降低 -> 外侧升高（符号约定见测试）
+    }
+    // 超高沿线平滑，避免突变
+    const b0 = F.map(f => f.bank);
+    for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let j = -8; j <= 8; j++) { const q = b0[clamp(i + j, 0, n - 1)]; s += q; c++ } F[i].bank = s / c }
+    return F;
+  }
+
+  /* ---- 4. 构造一条道路 ---- */
+  function makeRoad(o) {
+    const pl = resample(o.points, o.step || 2), total = pl[pl.length - 1].s, step = o.step || 2;
+    const ground = o.ground || (() => 0);
+    const ys = profile(o.elevation || [{ s: 0, y: 0 }, { s: total, y: 0 }], total, step, o.maxGrade || .05);
+    const F = frames(pl, ys, o.designKmh || 60);
+    return {
+      id: o.id, kind: o.kind || 'main', lanes: o.lanes || 2, laneW: o.laneW || 3.5, shoulder: o.shoulder ?? .75,
+      layer: o.layer || 0, accuracy: o.accuracy || 'L1', estimated: o.estimated !== false, total, step, F,
+      widthAt: o.widthAt || null, ground,
+      width(s) { return this.widthAt ? this.widthAt(s) : this.lanes * this.laneW + this.shoulder * 2 },
+      at(s) { const i = clamp(Math.round(s / step), 0, F.length - 1); return F[i] },
+      deckClearance(s) { const f = this.at(s); return f.y - ground(f.x, f.z) },
+      type(s) { return this.deckClearance(s) > 1.5 ? 'elevated' : 'ground' },
+    };
+  }
+
+  /* ---- 5. 匝道：由主线某段偏移生成（分流 / 合流）----
+   * dir=+1 向左（日本靠左行驶，出口通常在左侧）。 s0..s1 为分合流过渡段；之后沿给定曲线转出 */
+  function makeRamp(main, o) {
+    const { s0, s1, side = 1, exitTurn = 0, kind = 'offramp' } = o, length = Math.max(0, Math.min(o.length || 220, main.total - s1 - 2));
+    const w0 = main.width(s0) / 2, laneW = o.laneW || 3.5, rw = (o.lanes || 1) * laneW + 1.2;
+    const pts = [], step = 2, nTaper = Math.round((s1 - s0) / step);
+    // 主线并行段：偏移从 0（与主线最外侧车道中心线重合）平滑增至 gore 宽度
+    const off = w0 - laneW / 2 + (rw + 1.5) / 2 + 1.2;
+    for (let i = 0; i <= nTaper; i++) {
+      const s = s0 + i * step, f = main.at(s), u = smooth(i / nTaper);
+      const d = (w0 - laneW / 2) + (off - (w0 - laneW / 2)) * u;
+      pts.push([f.x + f.nx * side * d, f.z + f.nz * side * d]);
+    }
+    // 分流后：仍以主线对应位置为基准，横向偏移继续平滑增大 -> 自动跟随主线曲率，保证不会横穿主线。
+    // 横向外移量按“转角 θ、长度 L”的小角近似：Δ ≈ L·θ/2
+    const nExit = Math.round(length / step), shift = length * Math.abs(exitTurn) / 2;
+    for (let i = 1; i <= nExit; i++) {
+      const s = Math.min(main.total, s1 + i * step), f = main.at(s), d = off + shift * smooth(i / nExit);
+      pts.push([f.x + f.nx * side * d, f.z + f.nz * side * d]);
+    }
+    const ys = (o.elevation || [{ s: 0, y: main.at(s0).y }, { s: nTaper * step + length, y: main.at(s0).y - 4 }]);
+    const r = makeRoad({ id: o.id, kind, points: pts, elevation: ys, lanes: o.lanes || 1, laneW, shoulder: .6, layer: main.layer, accuracy: 'L1', ground: main.ground, designKmh: 40, maxGrade: .06 });
+    // 宽度：起点逐渐从 0 展开（并入主路处宽度连续为 0 的渐变段），再保持匝道宽
+    r.widthAt = s => rw * smooth(s / 60);
+    r.parent = main.id; r.joinS = s0; r.gore = { s0, s1 };
+    return r;
+  }
+
+  /* ---- 6. 桥墩位置：高架段每 span 米一个，净空 > minClear 才放 ---- */
+  function piers(road, span = 30, minClear = 3) {
+    const out = [];
+    for (let s = span / 2; s < road.total; s += span) { const c = road.deckClearance(s); if (c > minClear) { const f = road.at(s); out.push({ s, x: f.x, z: f.z, h: c, w: Math.min(road.width(s) * .55, 6) }) } }
+    return out;
+  }
+
+  /* ---- 7. 断面 -> 网格顶点（交给 Three.js 做 BufferGeometry）----
+   * 返回 {pos:[x,y,z...], idx:[...] }，横向 lateral 数组为各断面采样偏移（含横坡）*/
+  function deckMesh(road, thick = .8) {
+    const pos = [], idx = [], F = road.F; let k = 0;
+    for (let i = 0; i < F.length; i++) {
+      const f = F[i], w = road.width(f.s) / 2, ng = Math.sin(f.bank || 0);
+      const L = [[-w, 0], [0, 0], [w, 0]];
+      for (const [d] of L) { const rise = -d * ng; pos.push(f.x + f.nx * d, f.y + rise, f.z + f.nz * d) }
+      if (road.type(f.s) === 'elevated') for (const d of [-w, w]) pos.push(f.x + f.nx * d, f.y - thick, f.z + f.nz * d);   // 箱梁下缘
+      else for (const d of [-w, w]) pos.push(f.x + f.nx * d, f.y, f.z + f.nz * d);
+    }
+    const C = 5;
+    for (let i = 0; i < F.length - 1; i++) {
+      const a = i * C, b = (i + 1) * C;
+      for (const [p, q] of [[0, 1], [1, 2]]) idx.push(a + p, a + q, b + p, a + q, b + q, b + p);
+      idx.push(a + 0, b + 0, a + 3, b + 0, b + 3, a + 3);    // 左侧腹板
+      idx.push(a + 2, a + 4, b + 2, b + 2, a + 4, b + 4);    // 右侧腹板
+    }
+    return { pos, idx, cols: C };
+  }
+
+  return { resample, profile, frames, makeRoad, makeRamp, piers, deckMesh, smooth, clamp };
+});
+</script>
+<script id="netdrive-bundle">
+window.__NET={};
+(function(){
+/* road3d.js — 三维道路几何核心（无 Three.js 依赖，可在 Node 单元测试）
+ * 坐标：x 东、z 南、y 向上，单位米。法线 n=(-tz,0,tx) 指向行进方向的【右侧】（航向 -z 时 n=+x）。
+ * 车道编号：0 为最左，lanes-1 为最右；车道中心相对中心线的横向偏移 = (i-(lanes-1)/2)*laneW（沿 n）。
+ * 横坡：rise(d) = -d*sin(bank)，d 为沿 n 的横向偏移；右弯 bank>0 -> 右侧（弯内侧）更低。
+ * 每个 Road 带 accuracy / estimated：此处全部为程序生成的估算（L1），不是实测数据。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(); else root.Road3D = factory(); })(this, function () {
+  'use strict';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  /* 五次平滑：一、二阶导在两端为 0（用于匝道横向偏移 D(u)：曲率在分段衔接处连续，避免 smoothstep 在 u=tl 处曲率阶跃） */
+  const smoother = t => { t = clamp(t, 0, 1); return t * t * t * (t * (6 * t - 15) + 10); };
+
+  /* ---- 1. 中心线平滑：centripetal Catmull-Rom，再按弧长等距重采样 ---- */
+  function resample(pts, step = 2) {
+    if (pts.length < 2) return pts.map(p => ({ s: 0, x: p[0], z: p[1] }));
+    const P = [pts[0], ...pts, pts[pts.length - 1]], out = [];
+    const d = (a, b) => Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]), .5) || 1e-6;
+    for (let i = 1; i < P.length - 2; i++) {
+      const p0 = P[i - 1], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2];
+      const t0 = 0, t1 = t0 + d(p0, p1), t2 = t1 + d(p1, p2), t3 = t2 + d(p2, p3);
+      const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+      for (let k = 0; k < n; k++) {
+        const t = t1 + (t2 - t1) * k / n, pt = [0, 0];
+        for (let c = 0; c < 2; c++) {
+          const A1 = (t1 - t) / (t1 - t0) * p0[c] + (t - t0) / (t1 - t0) * p1[c];
+          const A2 = (t2 - t) / (t2 - t1) * p1[c] + (t - t1) / (t2 - t1) * p2[c];
+          const A3 = (t3 - t) / (t3 - t2) * p2[c] + (t - t2) / (t3 - t2) * p3[c];
+          const B1 = (t2 - t) / (t2 - t0) * A1 + (t - t0) / (t2 - t0) * A2;
+          const B2 = (t3 - t) / (t3 - t1) * A2 + (t - t1) / (t3 - t1) * A3;
+          pt[c] = (t2 - t) / (t2 - t1) * B1 + (t - t1) / (t2 - t1) * B2;
+        }
+        out.push({ x: pt[0], z: pt[1] });
+      }
+    }
+    const L = pts[pts.length - 1]; out.push({ x: L[0], z: L[1] });
+    const cum = [0]; for (let i = 1; i < out.length; i++) cum[i] = cum[i - 1] + Math.hypot(out[i].x - out[i - 1].x, out[i].z - out[i - 1].z);
+    const tot = cum[cum.length - 1], N = Math.max(2, Math.round(tot / step)), res = [];
+    let j = 0;
+    for (let k = 0; k <= N; k++) {
+      const s = tot * k / N; while (j < cum.length - 2 && cum[j + 1] < s) j++;
+      const u = (s - cum[j]) / ((cum[j + 1] - cum[j]) || 1);
+      res.push({ s, x: out[j].x + (out[j + 1].x - out[j].x) * u, z: out[j].z + (out[j + 1].z - out[j].z) * u });
+    }
+    return res;
+  }
+
+  /* ---- 2. 纵断面：控制点 (s,y) -> S 形竖曲线 + 纵坡限幅 ---- */
+  function profile(ctrl, total, step, maxGrade = 0.05) {
+    const n = Math.round(total / step) + 1, y = new Float64Array(n);
+    const c = ctrl.slice().sort((a, b) => a.s - b.s);
+    for (let i = 0; i < n; i++) {
+      const s = i * step; let k = 0; while (k < c.length - 2 && c[k + 1].s < s) k++;
+      const a = c[k], b = c[Math.min(k + 1, c.length - 1)], u = b.s === a.s ? 0 : (s - a.s) / (b.s - a.s);
+      y[i] = a.y + (b.y - a.y) * smooth(u);
+    }
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 1; i < n; i++) y[i] = clamp(y[i], y[i - 1] - maxGrade * step, y[i - 1] + maxGrade * step);
+      for (let i = n - 2; i >= 0; i--) y[i] = clamp(y[i], y[i + 1] - maxGrade * step, y[i + 1] + maxGrade * step);
+    }
+    return y;
+  }
+
+  /* ---- 3. 标架、曲率、横坡 ----
+   * 曲率 k：右转为正（朝 +n 转）。超高 e=clamp(0.8·v²/(127R),0,0.06)；bank=sign(k)·e，使弯内侧降低。 */
+  function frames(pl, ys, designKmh = 60) {
+    const n = pl.length, F = [];
+    for (let i = 0; i < n; i++) {
+      const a = pl[Math.max(0, i - 1)], b = pl[Math.min(n - 1, i + 1)];
+      let tx = b.x - a.x, tz = b.z - a.z; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+      F.push({ s: pl[i].s, x: pl[i].x, z: pl[i].z, y: ys[i], tx, tz, nx: -tz, nz: tx });
+    }
+    const W = 3;   // 曲率基线 ±W 个采样（±6 m）：±1 的差分会放大位置采样噪声（实测匝道曲率在 ±5e-3 间抖动、横坡随之抖动）
+    for (let i = 1; i < n - 1; i++) {
+      const A = F[Math.max(0, i - W)], B = F[Math.min(n - 1, i + W)], ds = (B.s - A.s) || 1;
+      const dth = Math.atan2(A.tx * B.tz - A.tz * B.tx, A.tx * B.tx + A.tz * B.tz);
+      F[i].k = dth / ds; F[i].grade = (B.y - A.y) / ds;
+    }
+    F[0].k = F[1].k; F[n - 1].k = F[n - 2].k; F[0].grade = F[1].grade; F[n - 1].grade = F[n - 2].grade;
+    for (const f of F) {
+      const R = 1 / Math.max(1e-6, Math.abs(f.k)), e = clamp(0.8 * designKmh * designKmh / (127 * R), 0, .06);
+      f.bank = Math.sign(f.k) * e;
+    }
+    const b0 = F.map(f => f.bank);
+    for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let j = -8; j <= 8; j++) { s += b0[clamp(i + j, 0, n - 1)]; c++ } F[i].bank = s / c }
+    return F;
+  }
+
+  /* ---- 4. 一条道路 ---- */
+  function makeRoad(o) {
+    const step = o.step || 2, pl = resample(o.points, step), total = pl[pl.length - 1].s;
+    const ground = o.ground || (() => 0);
+    const ys = profile(o.elevation || [{ s: 0, y: 0 }, { s: total, y: 0 }], total, step, o.maxGrade || .05);
+    const F = frames(pl, ys, o.designKmh || 60);
+    const road = {
+      id: o.id, kind: o.kind || 'main', lanes: o.lanes || 2, laneW: o.laneW || 3.5, shoulder: o.shoulder ?? .75,
+      layer: o.layer || 0, accuracy: o.accuracy || 'L1', estimated: o.estimated !== false, total, step, F,
+      widthAt: o.widthAt || null, ground,
+      width(s) { return this.widthAt ? this.widthAt(s) : this.lanes * this.laneW + this.shoulder * 2 },
+      laneOffset(i) { return (i - (this.lanes - 1) / 2) * this.laneW },
+      /* 断面索引：重采样的实际间距 ds 不一定等于名义 step（总长不是 step 的整数倍时 ds≠step，例如 2.002），
+         0.11 的 s/step 会让 frame(s) 与网格断面 F[i] 累计偏差最大 0.7 m——用二分查找按真实 s 定位。 */
+      idx(s) { let lo = 0, hi = F.length - 1; s = clamp(s, 0, total); while (hi - lo > 1) { const m = (lo + hi) >> 1; if (F[m].s <= s) lo = m; else hi = m } return lo },
+      at(s) { const i = this.idx(s); return (F[Math.min(i + 1, F.length - 1)].s - s < s - F[i].s) ? F[Math.min(i + 1, F.length - 1)] : F[i] },
+      /* 线性插值标架（连续，用于碰撞/投影/车辆高度） */
+      frame(s) {
+        const i = Math.min(F.length - 2, this.idx(s)), a = F[i], b = F[i + 1], u = clamp((s - a.s) / ((b.s - a.s) || 1), 0, 1);
+        let tx = a.tx + (b.tx - a.tx) * u, tz = a.tz + (b.tz - a.tz) * u; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+        return { s: clamp(s, 0, total), x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: a.z + (b.z - a.z) * u, tx, tz, nx: -tz, nz: tx, bank: a.bank + (b.bank - a.bank) * u, k: (a.k || 0) + ((b.k || 0) - (a.k || 0)) * u, grade: (a.grade || 0) + ((b.grade || 0) - (a.grade || 0)) * u };
+      },
+      deckClearance(s) { const f = this.at(s); return f.y - ground(f.x, f.z) },
+      type(s) { return this.deckClearance(s) > 1.5 ? 'elevated' : 'ground' },
+    };
+    return road;
+  }
+
+  /* 路面高度：与 deckMesh 同一公式（rise=-d·sin(bank)） */
+  function surfaceY(road, s, lat) { const f = road.frame(s); return f.y - lat * Math.sin(f.bank) }
+
+  /* ---- 5. 匝道（分流 / 并入）----
+   * 横向偏移函数 D(u)：u 为离“匝道尖端”（gore tip，匝道中心恰在主线对应车道中心）的距离。
+   *   0..tl     : 从车道中心 d0 平滑外移到 off（与主线外缘拉开 gore 间隙）
+   *   tl..tl+L  : 继续外移 shift（以主线对应位置为基准 -> 自动跟随主线曲率，不会横穿主线）
+   * 分流(makeRamp)：u 沿行进方向增大；并入(makeMerge)：u 沿行进方向减小，尖端在下游。*/
+  function rampParams(main, o) {
+    const side = o.side ?? -1, lanes = o.lanes || 1, laneW = o.laneW || 3.5, rw = lanes * laneW + 1.2;
+    const tl = o.tl ?? ((o.s1 ?? 0) - (o.s0 ?? 0) || 100);
+    // 0.13：尖端处对齐的是“匝道上靠近主线的那条车道”（左侧匝道=最右车道，右侧匝道=最左车道）与主线最外车道的中心，
+    //       而不是匝道中心线（0.12 对多车道匝道会错开半个车道 1.75 m，被连接校验拒绝）
+    const lane = side < 0 ? 0 : main.lanes - 1, rampLane = side < 0 ? lanes - 1 : 0, d0 = Math.abs(main.laneOffset(lane)) + (lanes - 1) / 2 * laneW;
+    const off = main.width(0) / 2 + rw / 2 + 1.0;
+    const length = Math.max(0, Math.min(o.length ?? 220, o.maxLen ?? 1e9));
+    const shift = o.shift ?? length * Math.abs(o.exitTurn ?? .9) / 2;
+    // 匝道桥面与主线桥面实际分开的位置 u_sep（匝道近侧边缘越过主线远侧边缘）；护栏开口只开到此处 +3 m，
+    // 之后两层桥面之间有间隙，必须有护栏，否则车辆会掉进缝隙。
+    const D = u => u <= tl ? d0 + (off - d0) * smoother(u / tl) : off + shift * smoother((u - tl) / (length || 1));
+    // 0.13：匝道宽度渐变长度 wl 与横向渐变段 tl 成比例（0.6·tl；tl=100 时 = 0.12 的固定 60 m，默认场景不变）。
+    //       0.12 固定 60 m：tl 较短时匝道在变宽之前就已离开主线，两层桥面之间出现缝隙、主线护栏无法开口，驶出/并入在物理上不可能。
+    const wl = .6 * tl;
+    const P = { side, lanes, laneW, rw, tl, d0, off, length, shift, lane, rampLane, wl };
+    let sep = tl; for (let u = 0; u <= tl; u += .5) { if (D(u) - rw * smooth(u / wl) / 2 >= main.width(0) / 2 + .05) { sep = u; break } }
+    P.uOpen = sep + 3; return P;
+  }
+  const Dfn = P => u => u <= P.tl ? P.d0 + (P.off - P.d0) * smoother(u / P.tl) : P.off + P.shift * smoother((u - P.tl) / (P.length || 1));
+
+  /* 匝道在尖端处两层桥面重叠，横坡必须与主线一致；离尖端 60 m 内平滑过渡到匝道自身的超高（否则尖端处出现横坡阶跃/交叉面片） */
+  function blendBank(r, main, mainS, dist, wl = 60) { for (const f of r.F) { const u = dist(f), w = smooth(u / wl), mb = main.frame(mainS(u)).bank; f.bank = mb * (1 - w) + f.bank * w } }
+
+  function makeRamp(main, o) {
+    const s0 = o.s0, tl0 = o.tl ?? ((o.s1 ?? 0) - s0 || 100), P = rampParams(main, { ...o, maxLen: main.total - s0 - tl0 - 2 }), D = Dfn(P), pts = [], step = 2, U = P.tl + P.length;
+    for (let u = 0; u <= U + 1e-6; u += step) { const f = main.frame(s0 + u), d = D(u); pts.push([f.x + f.nx * P.side * d, f.z + f.nz * P.side * d]) }
+    const y0 = surfaceY(main, s0, P.side * P.d0), y1 = o.endY ?? y0 - 4;   // 0.13：尖端高度取主线桥面在匝道中心线横向位置处的高度（含横坡），而不是主线中心线高度（0.12 在弯道上差 bank×偏移，最大 0.31 m）
+    const r = makeRoad({ id: o.id, kind: o.kind || 'offramp', points: pts, elevation: o.elevation || [{ s: 0, y: y0 }, { s: U, y: y1 }], lanes: P.lanes, laneW: P.laneW, shoulder: .6, layer: main.layer, accuracy: 'L1', ground: main.ground, designKmh: 40, maxGrade: .06 });
+    const rw = P.rw; r.widthAt = s => rw * smooth(s / P.wl);
+    blendBank(r, main, u => s0 + u, f => f.s, P.wl);
+    r.parent = main.id; r.joinS = s0; r.gore = { type: 'diverge', tipS: s0, tl: P.tl, side: P.side, mainLane: P.lane, rampLane: P.rampLane, ramp: { sRange: [0, P.uOpen] }, uOpen: P.uOpen };
+    r.rampParams = P; return r;
+  }
+  function makeMerge(main, o) {
+    const sEnd = o.sEnd, tl0 = o.tl ?? 100, P = rampParams(main, { ...o, maxLen: sEnd - tl0 - 2 }), D = Dfn(P), pts = [], step = 2, U = P.tl + P.length;
+    for (let u = U; u >= -1e-6; u -= step) { const uu = Math.max(0, u), f = main.frame(sEnd - uu), d = D(uu); pts.push([f.x + f.nx * P.side * d, f.z + f.nz * P.side * d]) }
+    const y1 = surfaceY(main, sEnd, P.side * P.d0), y0 = o.startY ?? (y1 - 4);   // 同上（并入尖端）
+    const r = makeRoad({ id: o.id, kind: o.kind || 'onramp', points: pts, elevation: o.elevation || [{ s: 0, y: y0 }, { s: U, y: y1 }], lanes: P.lanes, laneW: P.laneW, shoulder: .6, layer: main.layer, accuracy: 'L1', ground: main.ground, designKmh: 40, maxGrade: .06 });
+    const rw = P.rw; r.widthAt = s => rw * smooth((r.total - s) / P.wl);
+    blendBank(r, main, u => sEnd - u, f => r.total - f.s, P.wl);
+    r.parent = main.id; r.joinS = sEnd; r.gore = { type: 'merge', tipS: sEnd, tl: P.tl, side: P.side, mainLane: P.lane, rampLane: P.rampLane, ramp: { sRange: [Math.max(0, r.total - P.uOpen), r.total] }, uOpen: P.uOpen };
+    r.rampParams = P; return r;
+  }
+  /* 直线接续路（城市道路）：从 road 的起点向后 / 终点向前延伸 length 米，保持位置、方向、高程连续 */
+  function makeFeeder(road, o) {
+    const back = o.where === 'before', f = back ? road.F[0] : road.F[road.F.length - 1], L = o.length || 200, sg = back ? -1 : 1;
+    const a = [f.x, f.z], b = [f.x + f.tx * L * sg, f.z + f.tz * L * sg];
+    const pts = back ? [b, a] : [a, b];
+    const w = o.width ?? road.width(back ? 0 : road.total);
+    const lanes = o.lanes || 1, laneW = o.laneW || 3.5, shoulder = (w - lanes * laneW) / 2;
+    return makeRoad({ id: o.id, kind: o.kind || 'street', points: pts, elevation: [{ s: 0, y: f.y }, { s: L, y: f.y }], lanes, laneW, shoulder, layer: 0, accuracy: 'L1', ground: road.ground, designKmh: 40 });
+  }
+  const minRadius = road => 1 / Math.max(1e-9, Math.max(...road.F.slice(2, -2).map(f => Math.abs(f.k || 0))));
+  const maxGradeOf = road => Math.max(...road.F.map(f => Math.abs(f.grade || 0)));
+
+  /* ---- 6. 桥墩：墩顶 = 桥底（deck y - thick）；净空 > minClear 才放 ---- */
+  function piers(road, span = 30, minClear = 3, thick = .8) {
+    const out = [];
+    for (let s = span / 2; s < road.total; s += span) {
+      const c = road.deckClearance(s);
+      if (c > minClear) { const f = road.frame(s), g = road.ground(f.x, f.z); out.push({ s, x: f.x, z: f.z, tx: f.tx, tz: f.tz, h: c, groundY: g, topY: f.y - thick, w: Math.min(road.width(s) * .55, 6) }) }
+    }
+    return out;
+  }
+
+  /* ---- 7. 桥面网格 ----
+   * 每个断面 5 个顶点：[0..2]=顶面左/中/右（含横坡），[3..4]=底面左/右（高架时 y-thick）。
+   * 顶面三角形法线朝 +y；左右腹板法线朝外；高架时补底面（法线朝下）。
+   * opts.skip(frame)->true 的相邻断面不生成面片（用于去掉与主线重叠的匝道起始段）。 */
+  function deckMesh(road, thick = .8, opts = {}) {
+    const pos = [], idx = [], F = road.F, C = 5, skip = opts.skip, elev = F.map(f => road.type(f.s) === 'elevated');
+    for (let i = 0; i < F.length; i++) {
+      const f = F[i], w = road.width(f.s) / 2, ng = Math.sin(f.bank || 0), b = elev[i] ? thick : 0;
+      for (const d of [-w, 0, w]) pos.push(f.x + f.nx * d, f.y - d * ng, f.z + f.nz * d);
+      for (const d of [-w, w]) pos.push(f.x + f.nx * d, f.y - d * ng - b, f.z + f.nz * d);
+    }
+    for (let i = 0; i < F.length - 1; i++) {
+      if (skip && skip(F[i]) && skip(F[i + 1])) continue;
+      const a = i * C, b = (i + 1) * C;
+      for (const [p, q] of [[0, 1], [1, 2]]) idx.push(a + p, a + q, b + p, a + q, b + q, b + p);
+      if (elev[i] && elev[i + 1]) {
+        idx.push(a + 0, b + 0, a + 3, b + 0, b + 3, a + 3);
+        idx.push(a + 2, a + 4, b + 2, b + 2, a + 4, b + 4);
+        idx.push(a + 3, b + 3, a + 4, b + 3, b + 4, a + 4);
+      }
+    }
+    return { pos, idx, cols: C };
+  }
+
+  return { resample, profile, frames, makeRoad, makeRamp, makeMerge, makeFeeder, piers, deckMesh, surfaceY, minRadius, maxGradeOf, smooth, clamp };
+});
+
+}).call(window.__NET);
+(function(){
+/* roadnet.js — 道路网络数据结构（不含渲染、不含车辆）
+ *
+ * RoadNode      : {id,x,y,z,type,segs:[segId],attach:[{seg,s}],accuracy,missing[]}
+ * RoadSegment   : {id,road(Road3D 几何),startNode,endNode,oneway,type,layer,bridge,tunnel,elevated,
+ *                  maxspeed,guard,tags,missing[],accuracy,estimated,length}
+ * RoadConnection: {id,kind:'continue'|'diverge'|'merge'|'node',
+ *                  from:{seg,sRange,lane}, to:{seg,lane}, offset(s_to = s_from + offset),
+ *                  laneMap:[[fromLane,toLane]], allowed:true, transfer:{margin,headingDot}, openEdges[]}
+ *
+ * 规则：
+ *  1. 连接只能显式创建（connect*）。几何靠近、平面交叉都不会产生连接。
+ *  2. 连接必须通过连续性校验：位置、方向、高程、宽度、层级；不通过则拒绝并记录原因。
+ *  3. 车辆只能沿 connection 从一个 segment 转入另一个（见 collision.js）。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(require('./road3d.js')); else root.RoadNet = factory(root.Road3D); })(this, function (R3) {
+  'use strict';
+  /* 护栏几何（渲染与碰撞共用，唯一来源）：护栏中心距桥面边缘 inset，厚度 thick；车体碰到护栏内侧面即被挡住 */
+  const MIN_DRIVABLE = 2.9;  // 车宽 1.9 + 两侧各 .5：比这窄的渐变段不是可驶入路面（与 collision.js 同值）
+  const EDGE_MARGIN = .05;   // 车心已越过本桥面边缘时，只要仍落在对面路面内即可换路（此时脚下只有那一块路面）
+  const BARRIER = { inset: .15, thick: .3, height: .9 };
+  const TOL = { pos: .5, y: .3, headContinue: .06, headGore: .12, widthRel: .1 };
+
+  class RoadNet {
+    get BARRIER() { return BARRIER }
+    constructor() { this.nodes = new Map(); this.segs = new Map(); this.conns = []; this.rejected = []; this.warnings = []; this._out = new Map(); this._in = new Map() }
+
+    /* ---- 节点 / 路段 ---- */
+    addNode(n) {
+      if (this.nodes.has(n.id)) return this.nodes.get(n.id);
+      const node = { id: n.id, x: n.x, y: n.y ?? 0, z: n.z, type: n.type || 'plain', segs: [], attach: [], accuracy: n.accuracy || 'L1', missing: n.missing || [] };
+      this.nodes.set(n.id, node); return node;
+    }
+    addSegment(o) {
+      if (this.segs.has(o.id)) throw new Error('duplicate segment ' + o.id);
+      const r = o.road, F0 = r.F[0], F1 = r.F[r.F.length - 1];
+      const a = this.addNode({ id: o.startNode, x: F0.x, y: F0.y, z: F0.z, type: o.startType });
+      const b = this.addNode({ id: o.endNode, x: F1.x, y: F1.y, z: F1.z, type: o.endType });
+      const bad = (n, f, w) => Math.hypot(n.x - f.x, n.z - f.z) > TOL.pos || Math.abs(n.y - f.y) > TOL.y;
+      if (bad(a, F0) || bad(b, F1)) throw new Error(`segment ${o.id}: 端点与节点 ${o.startNode}/${o.endNode} 坐标不一致`);
+      const mid = r.total / 2;
+      const seg = { id: o.id, road: r, startNode: o.startNode, endNode: o.endNode, oneway: o.oneway ?? true, type: o.type || 'road', layer: o.layer ?? r.layer ?? 0, bridge: !!o.bridge, tunnel: !!o.tunnel,
+        elevated: r.type(mid) === 'elevated', maxspeed: o.maxspeed ?? null, guard: o.guard || (o.type === 'street' ? 'none' : 'always'), tags: o.tags || {}, missing: o.missing || [], accuracy: r.accuracy, estimated: r.estimated, length: r.total };
+      this.segs.set(seg.id, seg); a.segs.push(seg.id); b.segs.push(seg.id); return seg;
+    }
+
+    /* ---- 车道中心点（含横坡高度）---- */
+    lanePos(segId, s, lane) {
+      const r = this.segs.get(segId).road, f = r.frame(s), off = r.laneOffset(lane);
+      return { x: f.x + f.nx * off, z: f.z + f.nz * off, y: R3.surfaceY(r, s, off), tx: f.tx, tz: f.tz, w: r.width(s) };
+    }
+
+    /* ---- 连接（唯一入口，带校验）---- */
+    connect(o) {
+      const reasons = [], notes = [], A = this.segs.get(o.from.seg), B = this.segs.get(o.to.seg);
+      if (!A || !B) reasons.push('路段不存在');
+      else {
+        const kind = o.kind || 'continue', offset = o.offset ?? 0, sf = kind === 'merge' ? o.from.sRange[1] : o.from.sRange[0],   /* 尖端：分流=范围起点，并入=范围终点 */ st = sf + offset, la = o.from.lane ?? 0, lb = o.to.lane ?? 0;
+        if (A.layer !== B.layer) notes.push(`layer 不同（${A.layer} → ${B.layer}）：layer 只是相对层级，是否合理由高程连续性判定`);
+        if (st < -1e-6 || st > B.length + 1e-6) reasons.push(`映射位置 ${st.toFixed(1)} 超出目标路段范围`);
+        else {
+          const p = this.lanePos(A.id, sf, la), q = this.lanePos(B.id, Math.max(0, Math.min(B.length, st)), lb);
+          const dpos = Math.hypot(p.x - q.x, p.z - q.z), dy = Math.abs(p.y - q.y), dot = p.tx * q.tx + p.tz * q.tz, tolH = kind === 'continue' ? TOL.headContinue : TOL.headGore;
+          if (dpos > TOL.pos) reasons.push(`位置不连续：车道中心相距 ${dpos.toFixed(2)} m > ${TOL.pos} m`);
+          if (dy > TOL.y) reasons.push(`高程不连续：Δy ${dy.toFixed(2)} m > ${TOL.y} m`);
+          if (dot < Math.cos(tolH)) reasons.push(`方向不连续：夹角 ${(Math.acos(Math.min(1, dot)) * 180 / Math.PI).toFixed(1)}° > ${(tolH * 180 / Math.PI).toFixed(1)}°`);
+          if (kind === 'continue') { const rel = Math.abs(p.w - q.w) / Math.max(p.w, q.w); if (rel > TOL.widthRel) reasons.push(`宽度不连续：${p.w.toFixed(2)} vs ${q.w.toFixed(2)} m`) }
+          else { const rampW = kind === 'diverge' ? q.w : p.w, lw = (kind === 'diverge' ? B : A).road.laneW; if (rampW > lw + .1) reasons.push(`匝道尖端宽度 ${rampW.toFixed(2)} m 过大（应渐变自 0）`) }
+        }
+      }
+      if (reasons.length) { this.rejected.push({ id: o.id, from: o.from.seg, to: o.to.seg, reasons }); return { ok: false, reasons } }
+      const c = { id: o.id, kind: o.kind || 'continue', from: { seg: A.id, sRange: o.from.sRange, lane: o.from.lane ?? 0 }, to: { seg: B.id, lane: o.to.lane ?? 0 }, offset: o.offset ?? 0,
+        laneMap: o.laneMap || [[o.from.lane ?? 0, o.to.lane ?? 0]], allowed: o.allowed !== false, transfer: o.transfer || { margin: .5, headingDot: .8, edgeHeadingDot: RoadNet.legacyEdgeHeading ? .3 : 0, edgeMargin: EDGE_MARGIN }   /* 0.13：车心已离开本桥面且落在相连桥面内时，不再要求朝向（0.12 的 .3 会在近乎横穿时形成看不见的墙；legacyEdgeHeading 可复现） */, openEdges: o.openEdges || [], meta: { ...(o.meta || {}), notes } };
+      this.conns.push(c); (this._out.get(A.id) || this._out.set(A.id, []).get(A.id)).push(c); (this._in.get(B.id) || this._in.set(B.id, []).get(B.id)).push(c); return { ok: true, conn: c };
+    }
+    connectContinue(id, fromSeg, toSeg, lane = 0) {
+      const A = this.segs.get(fromSeg);
+      if (A && this.segs.get(toSeg) && A.endNode !== this.segs.get(toSeg).startNode) return this._reject(id, fromSeg, toSeg, ['端点节点不同：continue 连接要求 from.endNode === to.startNode']);
+      return this.connect({ id, kind: 'continue', from: { seg: fromSeg, sRange: [A.length, A.length], lane }, to: { seg: toSeg, lane }, offset: -A.length });
+    }
+    connectDiverge(id, mainSeg, rampSeg) {
+      const M = this.segs.get(mainSeg), P = this.segs.get(rampSeg), g = P.road.gore;
+      if (!g || g.type !== 'diverge') return this._reject(id, mainSeg, rampSeg, ['匝道没有分流 gore 信息']);
+      const a = g.tipS, b = g.tipS + g.uOpen;
+      return this.connect({ id, kind: 'diverge', from: { seg: mainSeg, sRange: [a, b], lane: g.mainLane }, to: { seg: rampSeg, lane: g.rampLane ?? 0 }, offset: -g.tipS,
+        openEdges: RoadNet.legacyOpenEdges ? [{ seg: mainSeg, side: g.side, range: [a - 4, b] }, { seg: rampSeg, side: -g.side, range: [0, g.uOpen] }] : this._gapEdges(mainSeg, rampSeg), meta: { gore: g, openEdgeSource: RoadNet.legacyOpenEdges ? 'legacy-0.11' : 'coverage' } });
+    }
+    connectMerge(id, rampSeg, mainSeg) {
+      const M = this.segs.get(mainSeg), P = this.segs.get(rampSeg), g = P.road.gore;
+      if (!g || g.type !== 'merge') return this._reject(id, rampSeg, mainSeg, ['匝道没有并入 gore 信息']);
+      const r0 = g.ramp.sRange[0], r1 = P.length, off = g.tipS - P.length;     // s_main = s_ramp + (tipS - rampLength)
+      return this.connect({ id, kind: 'merge', from: { seg: rampSeg, sRange: [r0, r1], lane: g.rampLane ?? 0 }, to: { seg: mainSeg, lane: g.mainLane }, offset: off,
+        openEdges: RoadNet.legacyOpenEdges ? [{ seg: mainSeg, side: g.side, range: [g.tipS - g.uOpen, g.tipS + 4] }, { seg: rampSeg, side: -g.side, range: [r0, r1] }] : this._gapEdges(mainSeg, rampSeg), meta: { gore: g, openEdgeSource: RoadNet.legacyOpenEdges ? 'legacy-0.11' : 'coverage' } });
+    }
+    /* 护栏开口 = 两条路面的【实际覆盖】：A 的某一侧边缘线上的点若落在 B 的路面内（同一层、B 的 s 范围内），
+     * 则该处 A 的这一侧边缘是“可通行的开口”（判据与 collision.js 的换路条件一致：A 边缘线上的点必须落在 B 路面内且离 B 自己的边缘 ≥ margin；
+     * 只有路面重叠/相接且重叠量足够时才开口，路面之间有空隙或重叠不足时必须保留护栏）。（0.12 初版曾用 2×margin，结果护栏开口晚于车辆实际斜切位置，自动驾驶刮护栏——见报告），否则必须有护栏（否则车会被送到没有路面的地方）。
+     * 取代 0.11 中写死的 [tipS-uOpen, …] 范围——那些范围在匝道仍窄且位于主线内部时仍然开口，是 edge-block 的根因。*/
+    coverageIntervals(aId, bId, margin = EDGE_MARGIN, step = 1) {
+      const A = this.segs.get(aId), B = this.segs.get(bId), out = [];
+      const covered = (s, d) => { const f = A.road.frame(s), x = f.x + f.nx * d, z = f.z + f.nz * d, y = R3.surfaceY(A.road, s, d), q = this.project(bId, x, z);
+        return B.road.width(q.s) >= MIN_DRIVABLE && Math.abs(q.lat) <= B.road.width(q.s) / 2 - margin && Math.abs(q.sRaw - q.s) < 1e-6 && Math.abs(q.y - y) < 1.5 };
+      for (const side of [-1, 1]) {
+        let a = null, last = null;
+        for (let s = 0; s <= A.length + 1e-6; s += step) {
+          const ss = Math.min(s, A.length), hw = A.road.width(ss) / 2;
+          // 护栏线（护栏中心）与桥面边缘线都必须落在 B 路面内：护栏不能立在另一条路的车道上，也不能把车送到没有路面的地方
+          const cov = covered(ss, side * (hw - BARRIER.inset)) && covered(ss, side * hw);
+          if (cov) { if (a === null) a = s; last = s } else if (a !== null && s - last > 2) { out.push({ seg: aId, side, range: [a, last] }); a = null }
+        }
+        if (a !== null) out.push({ seg: aId, side, range: [a, last] });
+      }
+      return out.filter(e => e.range[1] - e.range[0] >= 1);
+    }
+    _gapEdges(a, b) { return [...this.coverageIntervals(a, b), ...this.coverageIntervals(b, a)] }
+    _reject(id, f, t, reasons) { this.rejected.push({ id, from: f, to: t, reasons }); return { ok: false, reasons } }
+
+    /* ---- 查询 ---- */
+    connsFrom(segId) { return this._out.get(segId) || [] }
+    connsInto(segId) { return this._in.get(segId) || [] }
+    surfaceY(segId, s, lat) { return R3.surfaceY(this.segs.get(segId).road, s, lat) }
+
+    /* 把点 (x,z) 投影到路段：返回 s（夹紧）、sRaw（未夹紧，端点外按切线外推）、lat（沿 n，右为正）。
+       hint 给定时只搜索 ±window 米，找不到合理结果再全局搜索。 */
+    project(segId, x, z, hintS, window = 80) {
+      const r = this.segs.get(segId).road, F = r.F, n = F.length;
+      let i0 = 0, i1 = n - 2;
+      if (hintS != null) { i0 = Math.max(0, Math.floor((hintS - window) / r.step)); i1 = Math.min(n - 2, Math.ceil((hintS + window) / r.step)) }
+      let best = null;
+      const scan = (a, b) => {
+        for (let i = a; i <= b; i++) {
+          const A = F[i], B = F[i + 1], dx = B.x - A.x, dz = B.z - A.z, l2 = dx * dx + dz * dz || 1, t = ((x - A.x) * dx + (z - A.z) * dz) / l2, tc = Math.max(0, Math.min(1, t));
+          const px = A.x + dx * tc, pz = A.z + dz * tc, d2 = (x - px) ** 2 + (z - pz) ** 2;
+          if (!best || d2 < best.d2) best = { d2, i, t: tc, tRaw: t }
+        }
+      };
+      scan(i0, i1); if (!best || (hintS != null && best.d2 > 900)) { best = null; scan(0, n - 2) }
+      const A = F[best.i], B = F[best.i + 1], s = A.s + (B.s - A.s) * best.t, f = r.frame(s);
+      let sRaw = s; if (best.i === 0 && best.tRaw < 0) sRaw = (best.tRaw) * (B.s - A.s); if (best.i === n - 2 && best.tRaw > 1) sRaw = r.total + (best.tRaw - 1) * (B.s - A.s);
+      const lat = (x - f.x) * f.nx + (z - f.z) * f.nz;
+      return { s, sRaw, lat, frame: f, y: R3.surfaceY(r, s, lat), dist: Math.sqrt(best.d2) };
+    }
+
+    /* 护栏：某路段某侧(-1 左 / +1 右)在 s 处是否有护栏 */
+    hasBarrier(segId, side, s) {
+      const seg = this.segs.get(segId);
+      if (seg.guard === 'none') return false;
+      if (seg.guard === 'elevated-only' && seg.road.type(s) !== 'elevated') return false;
+      for (const c of this.conns) for (const e of c.openEdges) if (e.seg === segId && e.side === side && s >= e.range[0] && s <= e.range[1]) return false;
+      return true;
+    }
+    /* 护栏连续区间（供网格生成使用） */
+    barrierIntervals(segId, side) {
+      const seg = this.segs.get(segId), step = 2, out = []; let a = null;
+      for (let s = 0; s <= seg.length + 1e-6; s += step) { const h = this.hasBarrier(segId, side, s); if (h && a === null) a = s; if (!h && a !== null) { out.push([a, s - step]); a = null } }
+      if (a !== null) out.push([a, seg.length]); return out.filter(x => x[1] - x[0] >= 2);
+    }
+    /* 路段端点是否有出路/入路（没有 -> 视为封闭端，车辆不能驶出）*/
+    endOpen(segId, which) {
+      const seg = this.segs.get(segId);
+      if (which === 'end') return this.connsFrom(segId).some(c => c.kind === 'continue');
+      return this.conns.some(c => c.kind === 'continue' && c.to.seg === segId);
+    }
+
+    /* ---- 审计：平面上交叉的路段对（不论是否连接），用于证明“交叉≠连接” ---- */
+    planCrossings(sampleStep = 6, tol = 2) {
+      const ids = [...this.segs.keys()], out = [];
+      for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+        const A = this.segs.get(ids[i]).road, B = this.segs.get(ids[j]).road; let best = null;
+        for (let sa = 0; sa <= A.total; sa += sampleStep) { const fa = A.frame(sa); for (let sb = 0; sb <= B.total; sb += sampleStep) { const fb = B.frame(sb), d = Math.hypot(fa.x - fb.x, fa.z - fb.z); if (d < tol * 1.5 && (!best || d < best.d)) best = { d, sa, sb, dy: Math.abs(fa.y - fb.y) } } }
+        if (best) out.push({ a: ids[i], b: ids[j], ...best, connected: this.conns.some(c => (c.from.seg === ids[i] && c.to.seg === ids[j]) || (c.from.seg === ids[j] && c.to.seg === ids[i])) });
+      }
+      return out;
+    }
+    summary() { return { nodes: this.nodes.size, segments: [...this.segs.values()].map(s => ({ id: s.id, type: s.type, layer: s.layer, lanes: s.road.lanes, length: +s.length.toFixed(1), elevated: s.elevated, accuracy: s.accuracy, estimated: s.estimated, missing: s.missing })), connections: this.conns.map(c => ({ id: c.id, kind: c.kind, from: c.from.seg, to: c.to.seg })), rejected: this.rejected } }
+  }
+  return { RoadNet, TOL };
+});
+
+}).call(window.__NET);
+(function(){
+/* roadmesh.js —【渲染数据生成】只读 RoadNet，输出纯数组缓冲（无 Three.js 依赖，可在 Node 测试）。
+ * 路面/标线/护栏/桥墩都由“路段几何 + 路网规则”生成：改中心线、宽度、高程后重新调用即可，不需要改碰撞或车辆代码。
+ * 护栏位置/厚度来自 net.BARRIER，碰撞限位 = 护栏内侧面 − 车半宽（同一常量）；护栏区间 = net.barrierIntervals（gore 开口处断开）。
+ * 返回 { segId: { deck:{pos,idx}, marks:{white:{pos,idx}, yellow:{pos,idx}}, barrier:{pos,idx}|null, piers:[...] } } */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(require('./road3d.js')); else root.RoadMesh = factory(root.Road3D); })(this, function (R3) {
+  'use strict';
+  const LIFT = .03;                        // 标线抬高（页面还应启用 polygonOffset）
+  function quadStrip(road, s0, s1, l0, l1, lift, buf) {   // 沿 s 的条带，横向 [l0,l1]（相对中心，右为正），顺着路面横坡
+    const n = Math.max(1, Math.ceil((s1 - s0) / 2)), b = buf.pos.length / 3;
+    for (let i = 0; i <= n; i++) { const s = s0 + (s1 - s0) * i / n, f = road.frame(s);
+      for (const l of [l0, l1]) buf.pos.push(f.x + f.nx * l, R3.surfaceY(road, s, l) + lift, f.z + f.nz * l) }
+    for (let i = 0; i < n; i++) { const a = b + i * 2; buf.idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2) }   // 顶面朝 +y（与 deckMesh 同绕向）
+  }
+  function box(road, s0, s1, lat, w, h, buf) {
+    const n = Math.max(1, Math.ceil((s1 - s0) / 2)), b = buf.pos.length / 3;
+    for (let i = 0; i <= n; i++) { const s = s0 + (s1 - s0) * i / n, f = road.frame(s), y = R3.surfaceY(road, s, lat);
+      for (const [l, yy] of [[lat - w / 2, 0], [lat + w / 2, 0], [lat - w / 2, h], [lat + w / 2, h]]) buf.pos.push(f.x + f.nx * l, y + yy, f.z + f.nz * l) }
+    for (let i = 0; i < n; i++) { const a = b + i * 4, c = a + 4;
+      // 顶、左、右（法线向外）；页面材质 DoubleSide 兜底
+      for (const [p, q] of [[2, 3], [0, 2], [1, 3]]) buf.idx.push(a + p, a + q, c + p, a + q, c + q, c + p) }
+  }
+  function build(net, opt = {}) {
+    const out = {}, skipRamps = opt.skipGoreOverlap !== false;
+    for (const seg of net.segs.values()) {
+      const r = seg.road, g = r.gore, o = { deck: null, marks: { white: { pos: [], idx: [] }, yellow: { pos: [], idx: [] } }, barrier: null, piers: [], meta: { id: seg.id, elevated: seg.elevated, accuracy: seg.accuracy, estimated: seg.estimated } };
+      // 匝道与主线重叠：只跳过【整个断面都落在主线桥面内】的面片（0.12 之前按 gore.ramp.sRange 整段跳过，会在分流鼻端留下一块没有路面的楔形空洞，
+      // 而碰撞层认为那里有路——真实 Chromium 截图发现）。部分重叠（跨在主线边缘）的断面保留，并抬高 .02 m 避免与主线共面闪烁。
+      let skip = null, lift = null, partMap = null;
+      if (skipRamps && g && r.parent && net.segs.has(r.parent)) {
+        const M = net.segs.get(r.parent), inside = new Map(), part = new Map();
+        for (const f of r.F) { const w = r.width(f.s) / 2; let n = 0;
+          for (const d of [-w, w]) { const q = net.project(M.id, f.x + f.nx * d, f.z + f.nz * d); if (Math.abs(q.lat) <= M.road.width(q.s) / 2 - .02 && Math.abs(q.sRaw - q.s) < 1e-6 && Math.abs(q.y - (f.y - d * Math.sin(f.bank))) < 1.5) n++ }
+          inside.set(f, n === 2 || w < .05); part.set(f, n > 0) }
+        partMap = part; skip = f => inside.get(f) === true; lift = f => part.get(f) === true && inside.get(f) !== true;
+      }
+      const dm = R3.deckMesh(r, opt.thick ?? .8, { skip });
+      if (lift) r.F.forEach((f, i) => { if (lift(f)) for (let k = 0; k < 5; k++) dm.pos[(i * 5 + k) * 3 + 1] += .02 });
+      o.deck = { pos: dm.pos, idx: dm.idx };
+      // 标线：外缘实线（距路缘 .25 m）、车道分隔虚线；单向单车道道路只画外缘线
+      const W = x => r.width(x), white = o.marks.white;
+      let sRanges = [[0, r.total]];
+      if (g && partMap) {   // 标线只画在完全离开主线桥面的断面上（重叠段属于主线的车道）
+        const free = r.F.filter(f => !partMap.get(f)).map(f => f.s);
+        if (g.type === 'diverge') sRanges = [[Math.min(...free, r.total), r.total]]; else sRanges = [[0, Math.max(0, ...free)]];
+      } else if (g) sRanges = g.type === 'diverge' ? [[g.ramp.sRange[1], r.total]] : [[0, g.ramp.sRange[0]]];
+      for (const [a, b] of sRanges) {
+        let a0 = a; while (a0 < b - 1) { const e = Math.min(b, a0 + 20), hw0 = W(a0) / 2 - .35, hw1 = W(e) / 2 - .35;
+          for (const sd of [-1, 1]) quadStrip(r, a0, e, sd * hw1 - .075, sd * hw1 + .075, LIFT, white); a0 = e }
+        for (let i = 1; i < r.lanes; i++) { const l = (i - r.lanes / 2) * r.laneW; for (let s = a + 3; s + 3 < b; s += 12) quadStrip(r, s, s + 3, l - .075, l + .075, LIFT, white) }
+      }
+      // 护栏：按 net.barrierIntervals（含 gore 开口、guard 规则）
+      const bb = { pos: [], idx: [] };
+      for (const side of [-1, 1]) for (const [a, b] of net.barrierIntervals(seg.id, side)) for (let s = a; s < b; s += 30) { const e = Math.min(b, s + 30); box(r, s, e, side * (W((s + e) / 2) / 2 - net.BARRIER.inset), net.BARRIER.thick, net.BARRIER.height, bb) }
+      if (bb.pos.length) o.barrier = bb;
+      // 桥墩：与 road3d.piers 同源（topY = 桥面 y − 厚度）
+      if (seg.elevated || r.type(r.total / 2) === 'elevated') o.piers = R3.piers(r, g ? 26 : 30, 3, opt.thick ?? .8);
+      out[seg.id] = o;
+    }
+    return out;
+  }
+  return { build };
+});
+
+}).call(window.__NET);
+(function(){
+/* vehicle.js —【A. 车辆动力学】只知道自己和环境参数 {mu, grade}，不知道任何道路对象。
+ * 状态：x,z（平面位置）、heading（航向，前进方向=(cos h, sin h)，增大=向右转，与 road3d 的 n 方向一致）、speed(m/s, ≥0)、steer(前轮转角 rad)。
+ * 模型：运动学自行车模型 + 侧向加速度上限（超过则转向不足，slip=true）。无悬架/轮胎模型。
+ * 倒车（0.13）：gear 'D'|'R'。speed 为带符号速度：>0 沿车身朝向前进，<0 沿车身反方向移动（倒车）。
+ *   换挡只能在 |speed| < 0.3 m/s 时进行（c.gear 指定目标挡位）；R 挡最高 25 km/h。
+ *   本模块只管“车身怎么动”；“是否逆行”（相对道路允许方向）由 collision/drivesim 根据道路判定，两者互不混用。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(); else root.Vehicle = factory(); })(this, function () {
+  'use strict';
+  const P = { L: 2.7, maxSteer: .55, engine: 4.2, vmax: 55, brake: 9, steerRate: 3, rEngine: 2.5, rVmax: 7 };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const maxSteerAt = v => P.maxSteer / (1 + (Math.abs(v) / 14) ** 2);
+  const create = (x, z, heading, speed = 0) => ({ x, z, heading, speed, gear: 'D', steer: 0, yawRate: 0, ay: 0, slip: false, y: 0 });
+  /* c={throttle 0..1, brake 0..1, steer -1..1}; env={mu, grade} */
+  function step(v, c, env, dt) {
+    const mu = env.mu ?? 1, grade = env.grade ?? 0;
+    v.steer += clamp(c.steer * maxSteerAt(v.speed) - v.steer, -P.steerRate * dt, P.steerRate * dt);
+    if (c.gear && c.gear !== v.gear && Math.abs(v.speed) < .3) v.gear = c.gear;           // 只在近乎停止时换挡
+    const dir = v.gear === 'R' ? -1 : 1, sp = Math.abs(v.speed);
+    const aEng = clamp(c.throttle, 0, 1) * (dir > 0 ? P.engine * Math.max(0, 1 - sp / P.vmax) : P.rEngine * Math.max(0, 1 - sp / P.rVmax)), aBrk = clamp(c.brake, 0, 1) * P.brake * Math.min(1, mu / .9);
+    const aRes = .12 + .0005 * sp * sp, aGr = -9.81 * grade;
+    // 驱动力沿挡位方向；制动与阻力总是使 |speed| 减小且不越过 0；坡度沿车身前向
+    let sv = v.speed + (dir * aEng + aGr) * dt; const decel = (aBrk + aRes) * dt;
+    sv = Math.abs(sv) <= decel ? 0 : sv - Math.sign(sv) * decel;
+    if (Math.abs(sv) < .03 && c.throttle <= 0) sv = 0;
+    v.speed = sv;
+    let yaw = v.speed * Math.tan(v.steer) / P.L; const ayMax = mu * 9.81 * .8; v.slip = false;
+    if (Math.abs(v.speed) > .5 && Math.abs(v.speed * yaw) > ayMax) { yaw = Math.sign(yaw) * ayMax / Math.abs(v.speed); v.slip = true }
+    v.yawRate = yaw; v.ay = v.speed * yaw;
+    const h2 = v.heading + yaw * dt / 2; v.x += Math.cos(h2) * v.speed * dt; v.z += Math.sin(h2) * v.speed * dt; v.heading += yaw * dt; return v;
+  }
+  return { P, create, step, maxSteerAt };
+});
+
+}).call(window.__NET);
+(function(){
+/* collision.js —【C. 碰撞 / 道路归属】
+ * 输入：路网、车辆状态、当前所在路段 cur；输出：修正后的位置 + 事件。不改变道路数据，不做动力学积分。
+ * 规则：
+ *  - 车辆始终“属于”某一路段 cur.seg。只有存在 RoadConnection 且车辆已位于目标路面内（含边距）时才能转入另一路段，
+ *    不会因为两条路在空间上靠近就换路（立交上下层互不影响）。
+ *  - 路缘有护栏：把车推回、削减法向速度并产生事件；无护栏的路缘（地面城市道路）允许驶出（offroad 事件）。
+ *  - 0.13：路段端点若有连接（任一方向），车辆可以物理通过——包括沿连接反向通过（逆行/倒车）。
+ *    只有“没有任何连接”的端点（测试区地图边界）才挡住车辆，事件名 map-boundary（不再是人工 end-wall）。
+ *  - 换路的朝向条件用“运动方向”（倒车时与车身相反），而不是车身朝向。
+ *  - 逆行状态（wrongWay）：单行路段上，挂 D 挡、车身朝向与允许方向相反并在移动；倒车（R 挡）单独记为 reversing，
+ *    倒车且运动方向与允许方向相反记为 againstFlow。三者分开，不混为一谈。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(); else root.Collision = factory(); })(this, function () {
+  'use strict';
+  /* 分合流渐变段中，宽度小于“车宽+两侧边距”的路面不是可驶入的路面（只是渐变的加宽），不允许换入；否则车辆斜穿细条会反复换路 */
+  const CAR = { halfW: .95 }, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d };
+
+  function resolve(net, veh, cur, dt = 1 / 60) {
+    const HOLD = .5;    // 换路后同一连接 0.5 s 内，车心仍在本桥面内时不再换路（去抖：分合流重叠区两块路面都覆盖车心，归属有歧义）
+    const cur0 = cur; cur = { ...cur, holdT: Math.max(0, (cur.holdT || 0) - dt) };
+    const events = [], md = veh.speed < 0 ? -1 : 1, hx = md * Math.cos(veh.heading), hz = md * Math.sin(veh.heading);   // 运动方向
+    let seg = net.segs.get(cur.seg), p = net.project(cur.seg, veh.x, veh.z, cur.s);
+    // 1. 经由连接转入另一路段
+    for (const c of net.connsFrom(cur.seg)) {
+      if (!c.allowed || (cur.holdT > 0 && cur.holdConn === c.id && Math.abs(p.lat) < seg.road.width(p.s) / 2)) continue;   // 去抖只针对车心仍在本桥面内的重叠区；越过边缘时脚下只剩对面一块路面，必须允许
+      const cont = c.kind === 'continue', inRange = cont ? p.sRaw >= seg.length - .5 : (p.s >= c.from.sRange[0] && p.s <= c.from.sRange[1]);
+      if (!inRange) continue;
+      const T = net.segs.get(c.to.seg), sTo = clamp((cont ? p.sRaw : p.s) + c.offset, 0, T.length), q = net.project(c.to.seg, veh.x, veh.z, sTo);
+      const beyond = !cont && Math.abs(p.lat) >= seg.road.width(p.s) / 2, hd = beyond ? c.transfer.edgeHeadingDot : c.transfer.headingDot;   // 车心已越过本桥面边缘（护栏开口处）：对面确有路面（见 RoadNet.coverageIntervals），只拒绝近乎横向/逆向的情形
+      if ((cont || T.road.width(q.s) >= 2 * CAR.halfW + 2 * c.transfer.margin) && Math.abs(q.lat) <= T.road.width(q.s) / 2 - ((!cont && Math.abs(p.lat) >= seg.road.width(p.s) / 2) ? c.transfer.edgeMargin : c.transfer.margin) && (beyond ? Math.abs(hx * q.frame.tx + hz * q.frame.tz) : hx * q.frame.tx + hz * q.frame.tz) >= hd && (!cont || q.sRaw >= -.5)) {   // 车心已越过本桥面边缘：脚下只剩对面路面，双向都按物理换路（逆向时记 against）
+        const ag = hx * q.frame.tx + hz * q.frame.tz < 0; cur = { seg: T.id, s: q.s, lat: q.lat, y: q.y, holdT: HOLD, holdConn: c.id }; seg = T; p = q; events.push(ag ? { type: 'transfer', conn: c.id, against: true } : { type: 'transfer', conn: c.id }); break;
+      }
+    }
+    // 1b. 护栏开口区（gore）是两层桥面共用的路面：车靠近另一条路的桥面并驶入其范围时，沿连接反向换路。
+    //     仅当车心已越过本路段桥面边缘（|lat| ≥ 半宽），避免与正向换路来回抖动。
+    if (!events.length) for (const c of net.connsInto(cur.seg)) {
+      if (c.kind === 'continue' || !c.allowed) continue;
+      const sA = p.s - c.offset; if (sA < c.from.sRange[0] || sA > c.from.sRange[1]) continue;
+      if (Math.abs(p.lat) < seg.road.width(p.s) / 2) continue;      // 车心仍在本桥面内 -> 不换（与正向换路的“进入目标桥面 .5 m”互斥，避免抖动）
+      const A = net.segs.get(c.from.seg), q = net.project(A.id, veh.x, veh.z, sA);
+      if (A.road.width(q.s) >= 2 * CAR.halfW + 2 * c.transfer.margin && Math.abs(q.lat) <= A.road.width(q.s) / 2 - c.transfer.edgeMargin && Math.abs(hx * q.frame.tx + hz * q.frame.tz) >= c.transfer.edgeHeadingDot ) { cur = { seg: A.id, s: q.s, lat: q.lat, y: q.y, holdT: HOLD, holdConn: c.id }; seg = A; p = q; events.push({ type: 'transfer', conn: c.id, reverse: true }); break }
+    }
+    // 1c. 沿 continue 连接反向通过路段起点（逆行或倒车）：物理上路面是连续的，不设人工墙；连接本身仍须存在
+    if (!events.length && p.sRaw < -.6 && hx * p.frame.tx + hz * p.frame.tz < 0) for (const c of net.connsInto(cur.seg)) {   // 迟滞：正向换路落点在 s≈-0.5，必须越过 -0.6 且运动朝向起点，才反向换路
+      if (c.kind !== 'continue' || !c.allowed) continue;
+      const A = net.segs.get(c.from.seg), q = net.project(A.id, veh.x, veh.z, A.length + p.sRaw);
+      if (Math.abs(q.lat) <= A.road.width(q.s) / 2 && q.sRaw <= A.length - .6) { cur = { seg: A.id, s: q.s, lat: q.lat, y: q.y, holdT: HOLD, holdConn: c.id }; seg = A; p = q; events.push({ type: 'transfer', conn: c.id, against: true }); break }
+    }
+    // 2. 地图边界（没有任何连接的端点）
+    const L = seg.length, closedEnd = !net.endOpen(seg.id, 'end'), closedStart = !net.endOpen(seg.id, 'start');   // 端点 open = 有 continue 连接（任一方向均可通过）
+    const beyondEnd = p.sRaw > L - .3 && (closedEnd || p.sRaw > L + 1), beforeStart = p.sRaw < .3 && (closedStart || p.sRaw < -1);
+    if (beyondEnd || beforeStart) {
+      const sB = beyondEnd ? (closedEnd ? L - .3 : L + 1) : (closedStart ? .3 : -1), fB = seg.road.frame(Math.max(0, Math.min(L, sB))), lat = p.lat, ext = sB - Math.max(0, Math.min(L, sB));
+      // 只推回越过的部分（0.12 起开放端会从 s=-1 被拉到 +0.3，产生 1.3 m 的跳动）
+      veh.x = fB.x + fB.tx * ext + fB.nx * lat; veh.z = fB.z + fB.tz * ext + fB.nz * lat; veh.speed = 0;
+      events.push({ type: 'map-boundary', at: beyondEnd ? 'end' : 'start', open: beyondEnd ? !closedEnd : !closedStart });   // open=true：端点有连接，但车不在相连路面上（路外区域，测试区未建模）
+      p = net.project(seg.id, veh.x, veh.z, Math.max(0, Math.min(L, sB)));
+    }
+    // 3. 路缘
+    const f = p.frame, halfW = seg.road.width(p.s) / 2, B = net.BARRIER, limB = halfW - B.inset - B.thick / 2 - CAR.halfW, side0 = Math.sign(p.lat), barrier = Math.abs(p.lat) > limB && net.hasBarrier(seg.id, side0, p.s), lim = barrier ? limB : halfW - CAR.halfW;
+    if (Math.abs(p.lat) > lim) {
+      const side = side0;
+      const tEv = events.find(e => e.type === 'transfer'), tCont = tEv && (net.conns.find(c => c.id === tEv.conn) || {}).kind === 'continue';
+      const fromOpen = cur0.seg === seg.id ? (Math.abs(cur0.lat) > limB + .05 && Math.sign(cur0.lat) === side0 && !net.hasBarrier(seg.id, side0, cur0.s)) : (tCont && Math.abs(p.lat) - lim > .05);   // 换路帧：只对 continue（端对端接缝）适用；分合流开口的换路维持原处理
+      if (barrier && fromOpen) {
+        // 0.13：从无护栏处（开口区，或刚经连接从无护栏的路段进入）驶向护栏起点 → 撞上护栏端部（纵向挡住、停车），
+        // 而不是在一帧内被横向推开（0.12 会横移 0.4–1.1 m）。换路帧则退回原路段原位置。
+        const S0 = net.segs.get(cur0.seg), sr0 = cur0.sRaw ?? cur0.s, sb = cur0.seg === seg.id ? cur0.s + .05 * Math.sign(cur0.s - p.s || 1) : Math.max(0, Math.min(S0.length, sr0)), ex = cur0.seg === seg.id ? 0 : sr0 - sb, fb = S0.road.frame(sb);
+        veh.x = fb.x + fb.tx * ex + fb.nx * cur0.lat; veh.z = fb.z + fb.tz * ex + fb.nz * cur0.lat;   // 换路帧：退回上一帧的真实位置（含越过端点的 sRaw）
+        events.push({ type: 'barrier-end', side: side0, impact: Math.abs(veh.speed), seg: seg.id }); veh.speed = 0;
+        if (S0 !== seg) { seg = S0; for (let k = events.length - 1; k >= 0; k--) if (events[k].type === 'transfer') events.splice(k, 1) }
+        p = net.project(seg.id, veh.x, veh.z, sb);
+      } else if (barrier) {
+        const over = Math.abs(p.lat) - lim; veh.x -= f.nx * side * over; veh.z -= f.nz * side * over;
+        const vn = hx * f.nx * side + hz * f.nz * side;           // 朝护栏的方向分量
+        if (vn > 0) {
+          const rv = veh.speed < 0 ? Math.PI : 0, mA = veh.heading + rv, t0 = Math.atan2(f.tz, f.tx), tAng = Math.abs(angDiff(mA, t0)) <= Math.PI / 2 ? t0 : t0 + Math.PI, da = angDiff(mA, tAng), impact = vn * Math.abs(veh.speed);
+          veh.heading = tAng + da * .4 - rv; veh.speed *= Math.sqrt(Math.max(0, 1 - vn * vn)) * .97;   // 0.13：在“运动方向”上贴向最近的切线方向（±t）；0.12 只贴向 +t，逆行/倒车撞护栏会被掉头约 108°
+          events.push({ type: 'barrier', side, impact });
+          // 去掉法向分量 + 少量摩擦：擦边(vn≈0)几乎不减速，正撞几乎停下（0.11 固定 25%/帧会让擦边的车在护栏旁爬行）
+        }
+        p = net.project(seg.id, veh.x, veh.z, p.s);
+      } else if (seg.road.type(p.s) === 'elevated' && Math.abs(p.lat) > halfW) {
+        // 兜底：高架桥面边缘外没有路面可去（开口区也只在另一层桥面存在时才有意义），不允许车心越过桥面边缘
+        const over = Math.abs(p.lat) - halfW; veh.x -= f.nx * side * over; veh.z -= f.nz * side * over; veh.speed *= .8; events.push({ type: 'edge-block', side, diag: { seg: seg.id, s: p.s, sRaw: p.sRaw, lat: p.lat, halfW, over, x: veh.x, z: veh.z, heading: veh.heading, speed: veh.speed } }); p = net.project(seg.id, veh.x, veh.z, p.s);
+      } else if (Math.abs(p.lat) > halfW + 2) events.push({ type: 'offroad' });
+    }
+    cur = { seg: seg.id, s: p.s, sRaw: p.sRaw, lat: p.lat, y: p.y, holdT: cur.holdT, holdConn: cur.holdConn }; veh.y = p.y;
+    // 4. 行驶状态（只读，不影响运动）
+    const ff = p.frame, bodyDot = Math.cos(veh.heading) * ff.tx + Math.sin(veh.heading) * ff.tz, moving = Math.abs(veh.speed) > .3, oneway = seg.oneway !== false;
+    const state = { reversing: veh.gear === 'R' && veh.speed < -.05, wrongWay: oneway && moving && veh.gear !== 'R' && bodyDot < -.3, againstFlow: oneway && moving && hx * ff.tx + hz * ff.tz < -.3 };
+    if (state.wrongWay) events.push({ type: 'wrong-way', seg: seg.id, s: p.s });
+    return { cur, events, state };
+  }
+  return { resolve, CAR };
+});
+
+}).call(window.__NET);
+(function(){
+/* nav.js —【D. 导航与路径选择】只读路网：求路径、给出控制指令（纯追踪 + 速度控制）。不改动车辆状态、不做碰撞。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(require('./vehicle.js')); else root.Nav = factory(root.Vehicle); })(this, function (V) {
+  'use strict';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), norm = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a };
+
+  /* Dijkstra：节点=路段，边=允许的连接，代价=目标路段长度。返回 [{seg, conn}]（conn 为进入该段所用连接），无路返回 null。 */
+  function route(net, from, to) {
+    const dist = new Map([[from, 0]]), prev = new Map(), todo = new Set([from]);
+    while (todo.size) {
+      let u = null; for (const k of todo) if (u === null || dist.get(k) < dist.get(u)) u = k;
+      todo.delete(u); if (u === to) break;
+      for (const c of net.connsFrom(u)) { if (!c.allowed) continue; const v = c.to.seg, nd = dist.get(u) + net.segs.get(v).length; if (!dist.has(v) || nd < dist.get(v)) { dist.set(v, nd); prev.set(v, { u, c }); todo.add(v) } }
+    }
+    if (!dist.has(to)) return null;
+    const out = []; for (let k = to; k !== undefined; k = prev.get(k)?.u) out.unshift({ seg: k, conn: prev.get(k)?.c || null });
+    return out;
+  }
+  /* 路线指引：返回下一个需要“选择”的连接及距离 */
+  function guidance(net, rt, cur) {
+    const i = rt.findIndex(r => r.seg === cur.seg); if (i < 0 || i === rt.length - 1) return { action: i < 0 ? 'off-route' : 'arrive' };
+    const c = rt[i + 1].conn, seg = net.segs.get(cur.seg), d = c.kind === 'continue' ? seg.length - cur.s : c.from.sRange[0] - cur.s;
+    return { action: c.kind === 'continue' ? 'continue' : c.kind === 'diverge' ? 'exit' : 'merge', conn: c.id, distance: Math.max(0, d), toSeg: c.to.seg };
+  }
+  /* 驾驶员 agent：返回 control(veh,cur)->{throttle,brake,steer} */
+  function agent(net, rt, opt = {}) {
+    const last = rt[rt.length - 1].seg;
+    return function control(veh, cur) {
+      const i = rt.findIndex(r => r.seg === cur.seg), seg = net.segs.get(cur.seg), r = seg.road, next = i >= 0 ? rt[i + 1] : null, c = next?.conn;
+      const Ld = clamp(5 + veh.speed * .9, 7, 40);
+      let tSeg = cur.seg, sT = cur.s + Ld, lane = opt.lane ?? Math.floor(r.lanes / 2);
+      if (c) {
+        const T = net.segs.get(c.to.seg);
+        if (c.kind === 'continue') { if (cur.s + Ld > seg.length) { tSeg = T.id; sT = cur.s + Ld - seg.length; lane = c.to.lane } }
+        else if (c.kind === 'merge') { if (c.from.sRange[1] - cur.s < 400) lane = c.from.lane }   // 0.13：并入前移到与主线相接的那条车道（多车道匝道的外侧车道在尖端渐窄）
+        else if (c.kind === 'diverge') { const dG = c.from.sRange[0] - cur.s; if (dG < 400) lane = c.from.lane; const oe = c.openEdges.filter(e => e.seg === cur.seg).map(e => e.range[0]), sOpen = oe.length ? Math.min(...oe) : c.from.sRange[0]; /* 护栏开口之前不向匝道一侧切（否则擦护栏） */ if (dG < 70 && cur.s >= sOpen - 3) { tSeg = T.id; sT = clamp(cur.s + Ld + c.offset, 0, T.length); lane = c.to.lane; /* 渐变段太窄(<车宽+边距)的匝道不是可驶入路面：目标点不早于匝道宽度≥3.6 m 处，否则代理会贴着主线护栏斜切 */ let sMin = 0; while (sMin < T.length && T.road.width(sMin) < 3.6) sMin += 1; sT = Math.max(sT, sMin) } }
+      }
+      const TS = net.segs.get(tSeg); sT = clamp(sT, 0, TS.length); if (tSeg === cur.seg) lane = clamp(lane, 0, TS.road.lanes - 1);
+      const tp = net.lanePos(tSeg, sT, lane), alpha = norm(Math.atan2(tp.z - veh.z, tp.x - veh.x) - veh.heading), delta = Math.atan(2 * V.P.L * Math.sin(alpha) / Ld);
+      const steer = clamp(delta / V.maxSteerAt(veh.speed), -1, 1);
+      // 目标速度：路段限速 / 前方曲率 / 终点停车
+      let vt = (seg.maxspeed ?? 40) / 3.6 * .9, kmax = 0; for (let d = 0; d <= 70; d += 10) kmax = Math.max(kmax, Math.abs(r.frame(Math.min(seg.length, cur.s + d)).k || 0));
+      if (kmax > 1e-4) vt = Math.min(vt, Math.sqrt(2.2 / kmax));
+      if (cur.seg === last) vt = Math.min(vt, Math.sqrt(2 * 2.5 * Math.max(0, seg.length - 6 - cur.s)));
+      return { throttle: clamp((vt - veh.speed) * .6, 0, 1), brake: clamp((veh.speed - vt) * .5, 0, 1), steer };
+    };
+  }
+  return { route, guidance, agent };
+});
+
+}).call(window.__NET);
+(function(){
+/* drivesim.js — 编排层：把 A(动力学) → C(碰撞/归属) 串起来，页面与无头测试共用同一份逻辑。
+ * 每帧：读取路面 grade/mu → Vehicle.step → Collision.resolve → 车辆高度取路面高度（含横坡）。不做任何传送/吸附。 */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(require('./vehicle.js'), require('./collision.js')); else root.DriveSim = factory(root.Vehicle, root.Collision); })(this, function (V, C) {
+  'use strict';
+  class DriveSim {
+    constructor(net, spawn) {
+      this.net = net; this.mu = 1; const p = net.lanePos(spawn.seg, spawn.s, spawn.lane ?? 0);
+      this.veh = V.create(p.x, p.z, Math.atan2(p.tz, p.tx), spawn.speed || 0); this.veh.y = p.y;
+      this.cur = { seg: spawn.seg, s: spawn.s, lat: 0, y: p.y }; this.events = []; this.dist = 0; this.lastMove = 0; this.t = 0; this.visited = [spawn.seg]; this.state = { reversing: false, wrongWay: false, againstFlow: false };
+    }
+    step(ctrl, dt) {
+      const seg = this.net.segs.get(this.cur.seg), f = seg.road.frame(this.cur.s), x0 = this.veh.x, z0 = this.veh.z;
+      V.step(this.veh, ctrl, { mu: this.mu, grade: f.grade }, dt);
+      const r = C.resolve(this.net, this.veh, this.cur, dt); this.cur = r.cur; this.events = r.events; this.state = r.state;
+      for (const e of r.events) if (e.type === 'transfer') this.visited.push(this.cur.seg);
+      this.lastMove = Math.hypot(this.veh.x - x0, this.veh.z - z0); this.dist += this.lastMove; this.t += dt; return this;
+    }
+  }
+  return { DriveSim };
+});
+
+}).call(window.__NET);
+(function(){
+/* c1scenario.js — “C1 高架测试区”路网。
+ * 数据性质：程序生成的【估算】路线（accuracy L1，estimated=true），不是首都高实测数据，也不是任何真实坐标。
+ * 流程：城市单行道 city_in → 并入匝道 onramp → 高架主线 main → 分流匝道 offramp → 城市单行道 city_out */
+(function (root, factory) { if (typeof module === 'object') module.exports = factory(require('./road3d.js'), require('./roadnet.js')); else root.C1Scenario = factory(root.Road3D, root.RoadNet); })(this, function (R3, RN) {
+  'use strict';
+  /* o（0.13，用于几何泛化测试；默认值 = 0.12 场景，逐位相同）：side 匝道在主线哪一侧(-1 左/+1 右)、tl 渐变段长、rampLen、rampLanes、
+   * curve 主线弯曲幅度倍数（0=直线）、mergeAt / divergeAt 尖端位置、mainLanes。*/
+  function build(o = {}) {
+    const side = o.side ?? -1, tl = o.tl ?? 100, rl = o.rampLen ?? 420, rLanes = o.rampLanes ?? 1, cv = o.curve ?? 1, mAt = o.mergeAt ?? 600, dAt = o.divergeAt ?? 1100;
+    const pts = []; for (let i = 0; i <= 180; i++) { const t = i * 10, amp = .2 + .8 * R3.smooth((t - 150) / 350) * (1 - R3.smooth((t - 1300) / 350)); pts.push([70 * cv * Math.sin(t / 220) * amp, -t]) }
+    const main = R3.makeRoad({ id: 'main', kind: 'main', points: pts, lanes: o.mainLanes ?? 4, laneW: 3.5, shoulder: .75, designKmh: 60, layer: 1, elevation: [{ s: 0, y: 12 }, { s: 3000, y: 12 }], accuracy: 'L1', estimated: true });
+    const onramp = R3.makeMerge(main, { id: 'onramp', sEnd: mAt, tl, side, length: rl, lanes: rLanes, startY: 0 });
+    const offramp = R3.makeRamp(main, { id: 'offramp', s0: dAt, tl, side, length: rl, lanes: rLanes, endY: 0 });
+    const cityIn = R3.makeFeeder(onramp, { id: 'city_in', where: 'before', length: 300, lanes: rLanes, laneW: 3.5 });
+    const cityOut = R3.makeFeeder(offramp, { id: 'city_out', where: 'after', length: 300, lanes: rLanes, laneW: 3.5 });
+    const net = new RN.RoadNet();
+    const S = (r, a, b, o = {}) => net.addSegment({ id: r.id, road: r, startNode: a, endNode: b, ...o });
+    S(cityIn, 'n_city_in', 'n_on_start', { type: 'street', oneway: true, layer: 0, maxspeed: 40 });
+    S(onramp, 'n_on_start', 'n_on_tip', { type: 'ramp', layer: 1, bridge: true, maxspeed: 40, endType: 'merge' });
+    S(main, 'n_main_start', 'n_main_end', { type: 'motorway', layer: 1, bridge: true, maxspeed: 60 });
+    S(offramp, 'n_off_tip', 'n_off_end', { type: 'ramp', layer: 1, bridge: true, maxspeed: 40, startType: 'diverge' });
+    S(cityOut, 'n_off_end', 'n_city_out', { type: 'street', oneway: true, layer: 0, maxspeed: 40 });
+    net.nodes.get('n_on_tip').attach.push({ seg: 'main', s: mAt }); net.nodes.get('n_off_tip').attach.push({ seg: 'main', s: dAt });
+    const results = [
+      net.connectContinue('c_city_in__onramp', 'city_in', 'onramp'),
+      net.connectMerge('c_onramp__main', 'onramp', 'main'),
+      net.connectDiverge('c_main__offramp', 'main', 'offramp'),
+      net.connectContinue('c_offramp__city_out', 'offramp', 'city_out'),
+    ];
+    return { net, roads: { main, onramp, offramp, cityIn, cityOut }, results, spawn: { seg: 'city_in', s: 15, lane: 0 }, route: ['city_in', 'onramp', 'main', 'offramp', 'city_out'],
+      info: { accuracy: 'L1', estimated: true, note: '程序生成的估算路线，非首都高实测数据', variant: o } };
+  }
+  return { build };
+});
+
+}).call(window.__NET);
+</script>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+if(!window.THREE){/* three.js 未加载（CDN 被拦/离线）：本页所有 3D 功能都依赖它，v0.8 起的顶层 `new THREE.…` 会直接抛错。显式显示回退提示并停止，而不是留下半初始化的页面。 */
+ window.__threeMissing=true;const fb=$('sceneFallback');if(fb)fb.style.display='flex';console.error('three.js 未加载：3D 不可用（尚未真实浏览器验证渲染）');return}
+const centers={'北海道':[43.06,141.35],'青森県':[40.82,140.74],'岩手県':[39.70,141.15],'宮城県':[38.27,140.87],'秋田県':[39.72,140.10],'山形県':[38.24,140.36],'福島県':[37.75,140.47],'茨城県':[36.34,140.45],'栃木県':[36.57,139.88],'群馬県':[36.39,139.06],'埼玉県':[35.86,139.65],'千葉県':[35.61,140.12],'東京都':[35.68,139.76],'神奈川県':[35.45,139.64],'新潟県':[37.90,139.02],'富山県':[36.70,137.21],'石川県':[36.56,136.66],'福井県':[36.06,136.22],'山梨県':[35.66,138.57],'長野県':[36.65,138.18],'岐阜県':[35.42,136.76],'静岡県':[34.98,138.38],'愛知県':[35.18,136.91],'三重県':[34.73,136.51],'滋賀県':[35.00,135.87],'京都府':[35.02,135.76],'大阪府':[34.69,135.50],'兵庫県':[34.69,135.18],'奈良県':[34.69,135.80],'和歌山県':[34.23,135.17],'鳥取県':[35.50,134.24],'島根県':[35.47,133.05],'岡山県':[34.66,133.93],'広島県':[34.40,132.46],'山口県':[34.19,131.47],'徳島県':[34.07,134.56],'香川県':[34.34,134.04],'愛媛県':[33.84,132.77],'高知県':[33.56,133.53],'福岡県':[33.59,130.40],'佐賀県':[33.25,130.30],'長崎県':[32.75,129.88],'熊本県':[32.79,130.74],'大分県':[33.24,131.61],'宮崎県':[31.91,131.42],'鹿児島県':[31.60,130.56],'沖縄県':[26.21,127.68]};
+const prefs=Object.keys(centers);
+const pref=$('pref');pref.innerHTML=prefs.map(x=>`<option>${x}</option>`).join('');pref.value='東京都';
+/* Leaflet 属于可选的小地图：CDN 被拦/离线时不得中止整个主脚本（否则 Three.js 与驾驶都起不来）。用无操作桩顶替，并显式标记。*/
+const L=(()=>{if(typeof window.L!=='undefined')return window.L;window.__leafletMissing=true;
+ const stub=new Proxy(function(){},{get:(t,k)=>k===Symbol.toPrimitive?()=>0:stub,apply:()=>stub,construct:()=>stub});
+ try{const m=document.getElementById('miniMap');if(m)m.textContent='小地图不可用（Leaflet 未加载）'}catch(e){}
+ console.warn('Leaflet 未加载：小地图与路线选点不可用，其余功能照常');return stub})();
+const map=L.map('miniMap',{zoomControl:false,attributionControl:true}).setView(centers['東京都'],11);
+const TP=[['国土地理院','https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{maxNativeZoom:18,attribution:'© 国土地理院'}],['CARTO','https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxNativeZoom:19,attribution:'© OSM · CARTO'}],['OpenStreetMap','https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxNativeZoom:19,referrerPolicy:'origin',attribution:'© OSM'}]];
+let tl=null,tErr=0;const tsel=$('tileSel');tsel.innerHTML=TP.map((p,i)=>`<option value="${i}">${p[0]}</option>`).join('');
+function setTiles(i){if(tl)map.removeLayer(tl);tErr=0;tsel.value=i;tl=L.tileLayer(TP[i][1],{maxZoom:19,...TP[i][2]}).addTo(map);tl.on('tileerror',()=>{if(++tErr===5&&i<TP.length-1)setTiles(i+1)})}
+tsel.onchange=()=>setTiles(+tsel.value);setTiles(0);
+let roadLayer=null,routeLayer=null,startMarker=null,endMarker=null,carMarker=null,roadsGeo=null,start=null,end=null,routeCoords=[],cum=[],steps=[],routeLength=0,routePos=0,pickMode='',db=null;
+function setStatus(t){$('dataStatus').textContent=t}
+function pickUI(on){$('miniMap').classList.toggle('pick-active',on);$('pickCancel').style.display=on?'block':'none';setTimeout(()=>map.invalidateSize(),80)}
+$('pickCancel').onclick=()=>{pickMode='';pickUI(false);$('routeStatus').textContent='已取消选点'};window.addEventListener('keydown',e=>{if(e.key==='Escape'&&pickMode){pickMode='';pickUI(false)}});
+function openDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window))return resolve(null);const q=indexedDB.open('JapanDriveSim',1);q.onupgradeneeded=()=>q.result.createObjectStore('prefRoads');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+openDB().then(v=>db=v).catch(()=>{});
+function dbGet(k){return new Promise(resolve=>{if(!db)return resolve(null);let q=db.transaction('prefRoads').objectStore('prefRoads').get(k);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>resolve(null)})}
+function dbPut(k,v){return new Promise(resolve=>{if(!db)return resolve();let q=db.transaction('prefRoads','readwrite').objectStore('prefRoads').put(v,k);q.onsuccess=()=>resolve();q.onerror=()=>resolve()})}
+async function getArea(name){const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&country=Japan&q='+encodeURIComponent(name+', Japan'),{headers:{'Accept-Language':'ja'}});if(!r.ok)throw Error('行政区检索失败 HTTP '+r.status);const a=await r.json();const x=a.find(v=>v.osm_type==='relation'&&v.class==='boundary')||a.find(v=>v.osm_type==='relation');if(!x)throw Error('未找到行政区边界');return x}
+async function fetchOverpass(q){let last;for(const ep of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.openstreetmap.fr/api/interpreter']){try{const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(q)});if(r.ok)return await r.json();last=Error('Overpass HTTP '+r.status)}catch(e){last=e}}throw last||Error('Overpass不可用')}
+function renderRoads(){if(roadLayer)map.removeLayer(roadLayer);roadLayer=L.geoJSON(roadsGeo,{style:f=>({color:['motorway','motorway_link'].includes(f.properties?.highway)?'#d45c54':['trunk','trunk_link'].includes(f.properties?.highway)?'#e79a43':'#c6a85a',weight:2,opacity:.8})}).addTo(map);try{map.fitBounds(roadLayer.getBounds(),{padding:[10,10]})}catch(e){}}
+async function loadRoads(){const prefName=pref.value,name=prefName+'_'+$('roadClass').value+($('viewOnly').checked?'_v'+map.getBounds().toBBoxString():'');$('loadRoads').disabled=true;try{setStatus('检查本机缓存…');let cached=await dbGet(name);if(cached){roadsGeo=cached;renderRoads();setStatus(`本机缓存：${cached.features.length.toLocaleString()} 条道路`);$('downloadGeo').disabled=false;return}const cls=$('roadClass').value,vo=$('viewOnly').checked,bb=map.getBounds(),scope=vo?`(${[bb.getSouth(),bb.getWest(),bb.getNorth(),bb.getEast()].map(v=>v.toFixed(5))})`:'(area.a)',pre=vo?'':`area["ISO3166-2"="JP-${String(prefs.indexOf(prefName)+1).padStart(2,'0')}"]->.a;`;const highway=cls==='all'||$('allRoads').checked?'[highway]':cls==='pref'?'[highway][ref~"(都道|道道|府道|県道)"]':cls==='local'?'[highway~"^(tertiary|tertiary_link|unclassified|residential|living_street|service)$"]':'[highway~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link)$"]';setStatus('正在下载 OSM 道路几何，可能需要数分钟…');const data=await fetchOverpass(`[out:json][timeout:180][maxsize:1073741824];${pre}way${scope}${highway};out geom;`),features=[];for(const el of data.elements||[]){if(!el.geometry||el.geometry.length<2)continue;features.push({type:'Feature',properties:{id:el.id,highway:el.tags?.highway||'',name:el.tags?.name||'',ref:el.tags?.ref||'',lanes:el.tags?.lanes||'',maxspeed:el.tags?.maxspeed||'',oneway:el.tags?.oneway||'',width:el.tags?.width||'',surface:el.tags?.surface||'',sidewalk:el.tags?.sidewalk||'',lit:el.tags?.lit||'',junction:el.tags?.junction||'',bridge:el.tags?.bridge||'',tunnel:el.tags?.tunnel||'',smoothness:el.tags?.smoothness||'',ref:el.tags?.ref||''},geometry:{type:'LineString',coordinates:el.geometry.map(p=>[p.lon,p.lat])}})}if(!features.length)throw Error('没有返回道路');roadsGeo={type:'FeatureCollection',features};await dbPut(name,roadsGeo);renderRoads();setStatus(`下载完成：${features.length.toLocaleString()} 条，已缓存`);$('downloadGeo').disabled=false}catch(e){setStatus('下载失败：'+e.message+'。可稍后重试或导入 GeoJSON')}finally{$('loadRoads').disabled=false}}
+$('loadRoads').onclick=loadRoads;$('roadClass').onchange=()=>{roadsGeo=null;$('downloadGeo').disabled=true;setStatus('道路类别已更改，请重新下载对应 OSM 道路')};
+pref.onchange=()=>{map.setView(centers[pref.value],10);roadsGeo=null;$('downloadGeo').disabled=true;setStatus('尚未载入该地区道路');pickMode='';start=null;end=null;if(startMarker){map.removeLayer(startMarker);startMarker=null}if(endMarker){map.removeLayer(endMarker);endMarker=null}if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}routeCoords=[];routeLength=0;$('routeBtn').disabled=true;$('routeStatus').textContent='已切换地区，请重新选择起点和终点'};
+$('downloadGeo').onclick=()=>{if(!roadsGeo)return;const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(roadsGeo)],{type:'application/geo+json'}));a.href=u;a.download=pref.value+'_'+$('roadClass').value+'_OSM_roads.geojson';a.click();setTimeout(()=>URL.revokeObjectURL(u),1200)};
+$('importGeo').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const j=JSON.parse(await f.text());if(j.type!=='FeatureCollection'||!Array.isArray(j.features))throw Error('GeoJSON格式不正确');roadsGeo=j;await dbPut(pref.value+'_'+$('roadClass').value,j);renderRoads();$('downloadGeo').disabled=false;setStatus(`导入成功：${j.features.length} 条道路`)}catch(err){setStatus('导入失败：'+err.message)}e.target.value=''};
+map.on('click',e=>{if(!pickMode)return;const p=[e.latlng.lng,e.latlng.lat];if(pickMode==='start'){start=p;if(startMarker)map.removeLayer(startMarker);startMarker=L.marker(e.latlng).addTo(map).bindPopup('起点').openPopup()}else{end=p;if(endMarker)map.removeLayer(endMarker);endMarker=L.marker(e.latlng).addTo(map).bindPopup('终点').openPopup()}const picked=pickMode==='start'?'起点':'终点';pickMode='';pickUI(false);$('routeStatus').textContent=`${picked}已选择：${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}${start&&end?' · 起终点齐全，可以规划路线':' · 现在选择另一端'}`;$('navText').textContent=`${picked}已选`; $('navDistance').textContent=start&&end?'起终点齐全，可规划路线':'请继续选择另一端';$('routeBtn').disabled=!(start&&end)});
+$('pickStart').onclick=()=>{pickMode='start';pickUI(true);if(window.matchMedia('(max-width:650px)').matches)$('panel').classList.remove('open');window.setTimeout(()=>map.invalidateSize(),80);$('routeStatus').textContent='请直接点击右上角地图选择起点（地图已放大）';$('navText').textContent='选择起点';$('navDistance').textContent='点击右上角放大的地图'};
+$('pickEnd').onclick=()=>{pickMode='end';pickUI(true);if(window.matchMedia('(max-width:650px)').matches)$('panel').classList.remove('open');window.setTimeout(()=>map.invalidateSize(),80);$('routeStatus').textContent='请直接点击右上角地图选择终点（地图已放大）';$('navText').textContent='选择终点';$('navDistance').textContent='点击右上角放大的地图'};
+function haversine(a,b){const r=Math.PI/180,R=6371000,d1=(b[1]-a[1])*r,d2=(b[0]-a[0])*r,q=Math.sin(d1/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(d2/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+function bearing(a,b){const r=Math.PI/180,y=Math.sin((b[0]-a[0])*r)*Math.cos(b[1]*r),x=Math.cos(a[1]*r)*Math.sin(b[1]*r)-Math.sin(a[1]*r)*Math.cos(b[1]*r)*Math.cos((b[0]-a[0])*r);return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function interp(pos){let lo=0,hi=cum.length-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]<pos)lo=m+1;else hi=m}const i=Math.max(1,lo),t=(pos-cum[i-1])/(cum[i]-cum[i-1]||1);return [routeCoords[i-1][0]+(routeCoords[i][0]-routeCoords[i-1][0])*t,routeCoords[i-1][1]+(routeCoords[i][1]-routeCoords[i-1][1])*t]}
+function maneuverText(s){const m=s?.maneuver||{},t=m.type,mod=m.modifier;if(t==='arrive')return '即将到达目的地';if(t==='roundabout'||t==='rotary')return '进入环岛';if(t==='merge')return '前方合流';if(t==='fork')return '前方分岔';if(t==='off ramp')return '驶出匝道';if(t==='on ramp')return '进入匝道';if(['turn','end of road','continue','new name'].includes(t))return ({left:'左转',right:'右转','slight left':'稍向左','slight right':'稍向右','sharp left':'急左转','sharp right':'急右转'}[mod]||'沿道路继续')+(s.name?' · '+s.name:'');return '沿当前道路继续'}
+function updateStep(){if(!steps.length)return;$('nextStep').innerHTML='<b>'+maneuverText(steps.find(s=>s._end>routePos+12)||steps.at(-1))+'</b><br>剩余约 '+Math.round(Math.max(0,(steps.find(s=>s._end>routePos+12)||steps.at(-1))._end-routePos))+' m';const s=steps.find(s=>s._end>routePos+12)||steps.at(-1);$('navText').textContent=maneuverText(s);$('navDistance').textContent='约 '+Math.round(Math.max(0,s._end-routePos))+' m 后';}
+let gameMode='free',world=null,renderer=null,scene=null,camera=null,roadGroup=null,trafficGroup=null,player=null,clock=null,roadPoints=[],roadCum=[],worldScale=.5,worldOrigin=null,routeCenter=[139.76,35.68],lastMapUpdate=0,sceneScale=1,signGroup=null,laneOffset=3.1;
+function makeRoadPointsFree(){const pts=[];for(let i=0;i<=2200;i++){const z=-i*2.2;const x=24*Math.sin(i*.014)+11*Math.sin(i*.039)+5*Math.sin(i*.006);pts.push(new THREE.Vector3(x,0,z))}return pts}
+function makeRoadPointsRoute(){if(c1Mode)return c1Points();if(routeCoords.length<2)return makeRoadPointsFree();const origin=routeCoords[0],lat0=origin[1]*Math.PI/180,raw=[];let acc=0;for(let i=0;i<routeCoords.length;i++){if(i>0)acc+=haversine(routeCoords[i-1],routeCoords[i]);const c=routeCoords[i],x=(c[0]-origin[0])*111320*Math.cos(lat0),z=-(c[1]-origin[1])*110540;raw.push({p:new THREE.Vector3(x,0,z),m:acc})}roadCum=raw.map(x=>x.m);return raw.map(x=>x.p)}
+function pointAtDistance(d){if(!roadPoints.length)return new THREE.Vector3();if(gameMode==='route'){let lo=0,hi=roadCum.length-1;while(lo<hi){const m=(lo+hi)>>1;if(roadCum[m]<d)lo=m+1;else hi=m}const i=Math.max(1,lo),t=(d-roadCum[i-1])/(roadCum[i]-roadCum[i-1]||1);return roadPoints[i-1].clone().lerp(roadPoints[i],THREE.MathUtils.clamp(t,0,1))}const ix=THREE.MathUtils.clamp(d/2.2,0,roadPoints.length-1),i=Math.floor(ix);return roadPoints[i].clone().lerp(roadPoints[Math.min(i+1,roadPoints.length-1)],ix-i)}
+function tangentAtDistance(d){const a=pointAtDistance(Math.max(0,d-2)),b=pointAtDistance(d+2);return b.sub(a).normalize()}
+function clearGroup(g){while(g.children.length){const o=g.children.pop();o.geometry?.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose()} }}
+function addBox(parent,w,h,l,x,y,z,color){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,l),new THREE.MeshStandardMaterial({color,roughness:.88}));o.position.set(x,y,z);parent.add(o);return o}
+function buildCar(color=0x2d9bd5,scale=1){const g=new THREE.Group(),body=new THREE.Mesh(new THREE.BoxGeometry(2.05,.62,4.05),new THREE.MeshStandardMaterial({color,metalness:.25,roughness:.42}));body.position.y=.82;g.add(body);const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.55,.72,1.85),new THREE.MeshStandardMaterial({color:0x253b49,metalness:.2,roughness:.28}));cabin.position.set(0,1.42,-.18);g.add(cabin);for(const x of [-1,1])for(const z of [-1.35,1.35]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.22,12),new THREE.MeshStandardMaterial({color:0x111519,roughness:1}));w.rotation.z=Math.PI/2;w.position.set(x*1.03,.48,z);g.add(w)}for(const x of [-.66,.66]){const lamp=new THREE.Mesh(new THREE.BoxGeometry(.36,.16,.08),new THREE.MeshBasicMaterial({color:0xffe8b0}));lamp.position.set(x,.85,2.04);g.add(lamp)}g.scale.setScalar(scale);return g}
+function makeTree(parent,x,z,s=1,variant=0){
+ const g=new THREE.Group();
+ const trunkMat=new THREE.MeshStandardMaterial({color:variant===2?0x62503a:0x70513a,roughness:1});
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.10*s,.19*s,1.9*s,7),trunkMat);trunk.position.y=.95*s;g.add(trunk);
+ const greens=variant===1?[0x315b42,0x426f4e,0x537d57]:variant===2?[0x315b50,0x3e705e,0x54866e]:[0x3c6845,0x527c4e,0x698d59];
+ if(variant===0){for(let j=0;j<4;j++){const c=new THREE.Mesh(new THREE.SphereGeometry((1.0-j*.11)*s,8,6),new THREE.MeshStandardMaterial({color:greens[j%3],roughness:1}));c.position.set((j%2?-.35:.3)*s,(2.0+(j%3)*.5)*s,(j%2?.18:-.15)*s);c.scale.y=1.12;g.add(c)}}
+ else {for(let j=0;j<4;j++){const crown=new THREE.Mesh(new THREE.ConeGeometry((1.12-j*.17)*s,2.0*s,7),new THREE.MeshStandardMaterial({color:greens[j%3],roughness:1}));crown.position.y=(1.75+j*.53)*s;g.add(crown)}}
+ g.position.set(x,0,z);parent.add(g);return g;
+}
+function addRoadStrip(points,width,y,color,group){const verts=[],uv=[],idx=[];let dist=0;for(let i=0;i<points.length;i++){if(i>0)dist+=points[i].distanceTo(points[i-1]);const t=(i===0?points[1].clone().sub(points[0]):i===points.length-1?points[i].clone().sub(points[i-1]):points[i+1].clone().sub(points[i-1])).normalize(),n=new THREE.Vector3(-t.z,0,t.x),p=points[i];verts.push(p.x+n.x*width/2,y,p.z+n.z*width/2,p.x-n.x*width/2,y,p.z-n.z*width/2);uv.push(0,dist/18,1,dist/18);if(i<points.length-1){const q=i*2;idx.push(q,q+1,q+2,q+1,q+3,q+2)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.98,side:THREE.DoubleSide}));group.add(mesh)}
+function makeGroundTexture(){const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');x.fillStyle='#718b59';x.fillRect(0,0,256,256);let seed=9127;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};for(let i=0;i<4800;i++){const a=50+Math.floor(rnd()*70);x.fillStyle=`rgba(${a-18},${a},${a-32},${.08+rnd()*.18})`;const r=1+rnd()*4;x.beginPath();x.arc(rnd()*256,rnd()*256,r,0,Math.PI*2);x.fill()}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(12,40);t.colorSpace=THREE.SRGBColorSpace;return t;}
+function makeAsphaltTexture(){
+ const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
+ x.fillStyle='#353a3b';x.fillRect(0,0,512,512);
+ let seed=731;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ for(let i=0;i<18000;i++){const v=35+Math.floor(rnd()*45);x.fillStyle=`rgba(${v},${v+2},${v+3},${rnd()*.22})`;const r=.4+rnd()*1.8;x.fillRect(rnd()*512,rnd()*512,r,r)}
+ for(let i=0;i<26;i++){x.strokeStyle='rgba(8,12,13,.10)';x.lineWidth=.5+rnd()*1.4;x.beginPath();x.moveTo(rnd()*512,rnd()*512);x.lineTo(rnd()*512,rnd()*512);x.stroke()}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,1);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function addRibbonBetween(parent,a,b,offset,width,color,y=.06){const ta=tangentAtDistance(a),tb=tangentAtDistance(b),pa=pointAtDistance(a),pb=pointAtDistance(b),na=new THREE.Vector3(-ta.z,0,ta.x),nb=new THREE.Vector3(-tb.z,0,tb.x);const v=[pa.x+na.x*(offset-width/2),y,pa.z+na.z*(offset-width/2),pa.x+na.x*(offset+width/2),y,pa.z+na.z*(offset+width/2),pb.x+nb.x*(offset-width/2),y,pb.z+nb.z*(offset-width/2),pb.x+nb.x*(offset+width/2),y,pb.z+nb.z*(offset+width/2)];const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex([0,1,2,1,3,2]);g.computeVertexNormals();parent.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:.95,side:THREE.DoubleSide})));}
+function addRoadPaint(offset,width,color,from,to){const step=from;for(let d=from;d<to;d+=step){} }
+function makeHouse(){
+ const g=new THREE.Group();
+ const palette=[[0xe2ded3,0x41474b],[0xd5d9d4,0x34414a],[0xc9c1b3,0x55504a],[0xe8e3d7,0x4a5960]];
+ const pick=palette[Math.floor(Math.random()*palette.length)];
+ const wall=new THREE.MeshStandardMaterial({color:pick[0],roughness:.92}),roof=new THREE.MeshStandardMaterial({color:pick[1],roughness:.86}),glass=new THREE.MeshStandardMaterial({color:0x476b79,metalness:.12,roughness:.22}),trim=new THREE.MeshStandardMaterial({color:0xf2eee4,roughness:.9}),concrete=new THREE.MeshStandardMaterial({color:0x888b84,roughness:1});
+ const base=new THREE.Mesh(new THREE.BoxGeometry(7.2,4.0,6.2),wall);base.position.y=2;g.add(base);
+ // Japanese gable roof: two sloped planes with deep eaves.
+ const roofGeo=new THREE.BufferGeometry();const rv=[-4.15,4.12,-3.65,4.15,4.12,-3.65,0,6.05,-3.65,-4.15,4.12,3.65,0,6.05,3.65,4.15,4.12,3.65];roofGeo.setAttribute('position',new THREE.Float32BufferAttribute(rv,3));roofGeo.setIndex([0,2,4,0,4,3,2,1,5,2,5,4]);roofGeo.computeVertexNormals();g.add(new THREE.Mesh(roofGeo,new THREE.MeshStandardMaterial({color:pick[1],side:THREE.DoubleSide,roughness:.88})));
+ const eave=new THREE.Mesh(new THREE.BoxGeometry(8.4,.16,7.5),roof);eave.position.y=4.05;g.add(eave);
+ for(const x of [-2.15,2.15]){const win=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.18,.10),glass);win.position.set(x,2.55,3.13);g.add(win);const frame=new THREE.Mesh(new THREE.BoxGeometry(1.38,1.3,.07),trim);frame.position.set(x,2.55,3.10);g.add(frame);win.position.z=3.16}
+ const door=new THREE.Mesh(new THREE.BoxGeometry(.82,2.0,.12),new THREE.MeshStandardMaterial({color:0x775c48}));door.position.set(0,1.02,3.18);g.add(door);
+ const step=new THREE.Mesh(new THREE.BoxGeometry(1.4,.18,.5),concrete);step.position.set(0,.12,3.45);g.add(step);
+ const ac=new THREE.Mesh(new THREE.BoxGeometry(.85,.5,.38),new THREE.MeshStandardMaterial({color:0xe9e9e2,roughness:.7}));ac.position.set(2.4,1.15,3.28);g.add(ac);
+ // Low boundary wall and tiny garden planter make suburban frontage less toy-like.
+ const wallLow=new THREE.Mesh(new THREE.BoxGeometry(7.7,.55,.35),concrete);wallLow.position.set(0,.28,4.1);g.add(wallLow);
+ const planter=new THREE.Mesh(new THREE.BoxGeometry(2.3,.28,.75),new THREE.MeshStandardMaterial({color:0x756d60}));planter.position.set(-2.1,.2,4.7);g.add(planter);
+ for(let i=0;i<3;i++){const shrub=new THREE.Mesh(new THREE.SphereGeometry(.38,7,5),new THREE.MeshStandardMaterial({color:[0x476c47,0x5a7c4e,0x3d6247][i],roughness:1}));shrub.position.set(-2.8+i*.7,.55,4.65);g.add(shrub)}
+ return g;
+}
+function makeUtilityPole(){const g=new THREE.Group(),metal=new THREE.MeshStandardMaterial({color:0x777f7d,roughness:.8}),wood=new THREE.MeshStandardMaterial({color:0x8a795f,roughness:.9});const pole=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,8.5,7),wood);pole.position.y=4.25;g.add(pole);const arm=new THREE.Mesh(new THREE.BoxGeometry(2.5,.16,.18),wood);arm.position.set(0,7.25,0);g.add(arm);for(let x of [-.9,0,.9]){const ins=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.42,7),metal);ins.position.set(x,7.52,0);g.add(ins)}const wireMat=new THREE.LineBasicMaterial({color:0x30383a});for(let x of [-.9,0,.9]){const pts=[new THREE.Vector3(x,7.7,-12),new THREE.Vector3(x,7.55,0),new THREE.Vector3(x,7.7,12)];const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),wireMat);g.add(line)}return g}
+function makeGuardrail(){const g=new THREE.Group(),steel=new THREE.MeshStandardMaterial({color:0xb8c1c0,metalness:.65,roughness:.4}),postMat=new THREE.MeshStandardMaterial({color:0x87918f,metalness:.45,roughness:.55});for(let x of [-2.8,2.8]){const post=new THREE.Mesh(new THREE.BoxGeometry(.12,.85,.12),postMat);post.position.set(x,.42,0);g.add(post)}const beam=new THREE.Mesh(new THREE.BoxGeometry(.18,.28,5.8),steel);beam.position.y=.78;g.add(beam);return g}
+function makeSign(kind,roadType,numberText=''){
+ const g=new THREE.Group(),poleMat=new THREE.MeshStandardMaterial({color:0x8e9998,metalness:.68,roughness:.38}),backMat=new THREE.MeshStandardMaterial({color:0x737b7b,metalness:.45,roughness:.58});
+ const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');x.clearRect(0,0,512,512);
+ const text=(t,px,y,size,color='#202629',font='bold')=>{x.fillStyle=color;x.font=`${font} ${size}px "Noto Sans JP","Yu Gothic",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(t,px,y)};
+ let shape='rect',w=1.35,h=1.35,boardY=2.0;
+ if(kind==='speed'){
+  shape='circle';w=h=1.22;x.fillStyle='#fff';x.beginPath();x.arc(256,256,226,0,Math.PI*2);x.fill();x.lineWidth=30;x.strokeStyle='#c92830';x.stroke();text(numberText||'40',256,254,194,'#171b1d');
+ }else if(kind==='stop'){
+  shape='triangle';w=1.55;h=1.42;x.beginPath();x.moveTo(42,54);x.lineTo(470,54);x.lineTo(256,466);x.closePath();x.fillStyle='#cf2630';x.fill();x.beginPath();x.moveTo(75,83);x.lineTo(437,83);x.lineTo(256,414);x.closePath();x.fillStyle='#fff';x.fill();text('止まれ',256,270,112,'#c9232c');
+ }else if(kind==='warning'){
+  shape='diamond';w=h=1.32;x.beginPath();x.moveTo(256,18);x.lineTo(494,256);x.lineTo(256,494);x.lineTo(18,256);x.closePath();x.fillStyle='#f6d33e';x.fill();x.lineWidth=17;x.strokeStyle='#24292a';x.stroke();x.strokeStyle='#24292a';x.lineWidth=27;x.lineCap='round';x.beginPath();x.moveTo(190,365);x.lineTo(190,265);x.quadraticCurveTo(190,190,265,190);x.lineTo(330,190);x.stroke();x.beginPath();x.moveTo(290,140);x.lineTo(360,190);x.lineTo(290,240);x.stroke();
+ }else if(kind==='guide'){
+  shape='rect';w=3.35;h=1.25;boardY=2.85;x.fillStyle=roadType==='expressway'?'#087c45':'#12699b';x.fillRect(5,45,502,422);x.strokeStyle='#f8faf7';x.lineWidth=13;x.strokeRect(17,57,478,398);text(roadType==='expressway'?'出口・方面':'方面案内',256,160,62,'#fff');text(roadType==='expressway'?'IC / EXIT':'この先',256,260,47,'#fff','600');text('案内標識',256,360,38,'#fff','600');
+ }else if(kind==='route'){
+  shape='hex';w=1.45;h=1.35;x.beginPath();x.moveTo(135,20);x.lineTo(377,20);x.lineTo(492,256);x.lineTo(377,492);x.lineTo(135,492);x.lineTo(20,256);x.closePath();x.fillStyle='#fff';x.fill();x.lineWidth=24;x.strokeStyle='#17649a';x.stroke();text(roadType==='national'?'国道':'県道',256,155,65,'#155f91');text(numberText||'路線',256,310,88,'#155f91');
+ }
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=2;
+ const poleCount=(kind==='guide')?2:1;for(let i=0;i<poleCount;i++){const px=(i-(poleCount-1)/2)*(w*.72);const post=new THREE.Mesh(new THREE.CylinderGeometry(.045,.065,kind==='guide'?3.8:3.0,8),poleMat);post.position.set(px,kind==='guide'?1.9:1.5,0);g.add(post)}
+ const backing=new THREE.Mesh(new THREE.PlaneGeometry(w+.07,h+.07),backMat);backing.position.set(0,boardY,-.035);g.add(backing);
+ const board=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide,roughness:.58,metalness:.04,alphaTest:.5}));board.position.set(0,boardY,.02);g.add(board);
+ if(kind==='speed'||kind==='stop'){const plateC=document.createElement('canvas');plateC.width=256;plateC.height=90;const q=plateC.getContext('2d');q.fillStyle='#fff';q.fillRect(2,2,252,86);q.strokeStyle='#333';q.lineWidth=5;q.strokeRect(3,3,250,84);q.fillStyle='#222';q.font='bold 34px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(kind==='speed'?'最高速度':'一時停止',128,47);const pt=new THREE.CanvasTexture(plateC);pt.colorSpace=THREE.SRGBColorSpace;const plate=new THREE.Mesh(new THREE.PlaneGeometry(.95,.32),new THREE.MeshStandardMaterial({map:pt,side:THREE.DoubleSide}));plate.position.set(0,boardY-.95,.025);g.add(plate)}
+ g.scale.setScalar(1.45);return g;
+}
+let sceneryItems=[];
+function makeSceneryProp(type,roadType){
+ if(type==='house')return makeHouse();if(type==='pole')return makeUtilityPole();if(type==='rail')return makeGuardrail();if(type==='speed'||type==='stop'||type==='warning'||type==='guide'||type==='route')return makeSign(type,roadType,type==='speed'?(roadType==='expressway'?'80':roadType==='national'?'50':'40'):'');
+ const g=new THREE.Group();if(type==='tree'){makeTree(g,0,0,.9+Math.random()*.65,Math.floor(Math.random()*3));return g}
+ if(type==='hill'){const h=28+Math.random()*52,m=new THREE.Mesh(new THREE.ConeGeometry(65+Math.random()*70,h,9),new THREE.MeshStandardMaterial({color:[0x6b8b69,0x819b75,0x718d7e,0x8c9d79][Math.floor(Math.random()*4)],roughness:1}));m.position.y=h*.36;g.add(m);return g}
+ if(type==='lamp'){const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,6.5,7),new THREE.MeshStandardMaterial({color:0x626e70,metalness:.45,roughness:.55}));pole.position.y=3.25;g.add(pole);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.7,.09,.1),pole.material);arm.position.set(.65,6.35,0);g.add(arm);const light=new THREE.Mesh(new THREE.BoxGeometry(.48,.15,.34),new THREE.MeshStandardMaterial({color:0xf1e8c6,emissive:0x594c25,roughness:.4}));light.position.set(1.38,6.25,0);g.add(light);return g}
+ const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(.9+Math.random()*.55,1),new THREE.MeshStandardMaterial({color:[0x466e4b,0x587a4b,0x658354][Math.floor(Math.random()*3)],roughness:1}));bush.position.y=.7;g.add(bush);return g;
+}
+function placeSceneryItem(item){const d=item.userData.distance;if(gameMode==='route'&&d>routeLength-4){item.visible=false;return}item.visible=true;const p=pointAtDistance(d),t=tangentAtDistance(d),n=new THREE.Vector3(-t.z,0,t.x);p.addScaledVector(n,item.userData.side*item.userData.offset);item.position.copy(p);item.position.y=0;item.rotation.y=['speed','stop','warning','guide','route'].includes(item.userData.type)?Math.atan2(-t.x,-t.z):Math.atan2(t.x,t.z);if(item.userData.type==='house')item.rotation.y+=item.userData.side>0?Math.PI:0;}
+function buildScenery(roadType,roadWidth){
+ sceneryItems=[];const total=gameMode==='route'?routeLength:roadPoints.length*2.2;const count=Math.min(150,Math.max(42,Math.floor(Math.min(total,3000)/18)));
+ for(let i=0;i<count;i++){let type;const r=Math.random();if(i%37===0)type='hill';else if(i%9===0)type='pole';else if(i%15===0&&roadType!=='expressway')type='house';else if(i%13===0)type='lamp';else if(roadType==='expressway'||roadType==='national')type=r<.72?'tree':r<.9?'rail':'bush';else type=r<.38?'tree':r<.59?'house':r<.73?'pole':r<.84?'bush':r<.92?'lamp':'rail';
+  const g=makeSceneryProp(type,roadType);g.userData={type,distance:Math.min(total-8,24+i*19),side:(['speed','stop','warning','guide','route'].includes(type)?-1:(i%2===0?-1:1)),offset:type==='hill'?210+Math.random()*130:type==='house'?roadWidth/2+15+Math.random()*17:type==='pole'?roadWidth/2+5.0:type==='lamp'?roadWidth/2+7:type==='rail'?roadWidth/2+1.7:roadWidth/2+6+Math.random()*12};world.add(g);sceneryItems.push(g);placeSceneryItem(g);
+ }
+}
+function updateScenery(){chunkUpdate(false)}
+function addJapaneseRoadSigns(points,roadWidth,roadType){
+ // Japanese-form signs with conservative spacing. These are scenic stand-ins unless OSM contains an exact sign node.
+ const total=gameMode==='route'?routeLength:points.length*2.2;const step=roadType==='expressway'?680:roadType==='national'?520:420;
+ const add=(d,kind)=>{if(d>=total-10)return;const p=pointAtDistance(d),t=tangentAtDistance(d),n=new THREE.Vector3(-t.z,0,t.x);const sign=makeSceneryProp(kind,roadType);sign.position.copy(p).addScaledVector(n,-(roadWidth/2+4.5));sign.position.y=0;sign.rotation.y=Math.atan2(-t.x,-t.z);world.add(sign)};
+ add(75,'speed');for(let d=step;d<Math.min(total,4200);d+=step){if(roadType==='local'&&Math.round(d/step)%2===0)add(d,'warning');else add(d,'guide')}
+}
+
+
+function buildWorld(){
+ if(!THREE){$('sceneFallback').style.display='flex';return}
+ if(!renderer){scene=new THREE.Scene();scene.background=new THREE.Color(0xbcdbe9);scene.fog=new THREE.Fog(0xbcdbe9,230,700);camera=new THREE.PerspectiveCamera(66,1,.1,7000);renderer=new THREE.WebGLRenderer({canvas:$('scene'),antialias:true,alpha:false,powerPreference:'default'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;clock=new THREE.Clock();hemiL=new THREE.HemisphereLight(0xeaf6ff,0x657b55,2.35);sunL=new THREE.DirectionalLight(0xffe4bf,1.9);sunL.position.set(-160,240,100);scene.add(hemiL,sunL);roadGroup=new THREE.Group();trafficGroup=new THREE.Group();world=new THREE.Group();scene.add(roadGroup,trafficGroup,world);player=buildCar(0x20a9c4,1);scene.add(player);headL=new THREE.SpotLight(0xfff2d0,0,95,.55,.6);headL.position.set(0,1.1,2);headL.target.position.set(0,0,40);player.add(headL,headL.target);buildSky();buildCockpit()}
+ clearGroup(roadGroup);clearGroup(world);clearGroup(trafficGroup);chunks.clear();live.length=0;OB.clear();OGEN++;sceneryItems=[];sceneScale=1;worldScale=1;forced=$('roadType').value;
+ roadPoints=gameMode==='route'?makeRoadPointsRoute():makeRoadPointsFree();if(gameMode==='free')roadCum=[];if(roadPoints.length<2)return;
+ const total=curTotal=gameMode==='route'?routeLength:roadPoints.length*2.2;buildSegs(total);makeSched(total);roadPos=0;prevPos=0;score=100;laneOffset=laneAt(0);
+ const dist=i=>gameMode==='route'?roadCum[i]:i*2.2,rb=(half,y,mat,uv)=>roadGroup.add(ribbon(roadPoints,i=>half(dist(i)),y,mat,i=>uv(i)));
+ rb(d=>100,-.34,new THREE.MeshStandardMaterial({map:makeGroundTexture(),roughness:1,side:THREE.DoubleSide}),i=>dist(i)/18);
+ rb(d=>widthAt(d)/2+1.2,-.08,new THREE.MeshStandardMaterial({color:0x96958c,roughness:1,side:THREE.DoubleSide}),i=>0);
+ rb(d=>widthAt(d)/2,.015,new THREE.MeshStandardMaterial({map:makeAsphaltTexture(),roughness:1,side:THREE.DoubleSide}),i=>i*.045);
+ const E=d=>widthAt(d)/2-.32,T=d=>typeAt(d);
+ paint(roadGroup,d=>-E(d),.13,0xf3f0df,0,total);paint(roadGroup,d=>E(d),.13,0xf3f0df,0,total);
+ paint(roadGroup,()=>0,.15,0xf4b13e,0,total,0,0,d=>T(d)==='pref'||(T(d)==='national'&&curv(d).a>.08));
+ paint(roadGroup,()=>0,.14,0xf3f0df,0,total,5,7,d=>T(d)==='national'&&curv(d).a<=.08);
+ for(const sg of[-1,1])paint(roadGroup,d=>sg*widthAt(d)*.25,.15,0xf5f5ed,0,total,8,12,d=>T(d)==='expressway');
+ for(const sg of SEGS)if(sg.t==='expressway'&&forced==='auto'||forced==='expressway'&&sg===SEGS[0]){const a0=Math.max(0,sg.a),b0=Math.min(total,sg.b);if(b0>a0){wall(roadGroup,a0,b0,()=>.42,0,.85,0x9da5a3);wall(roadGroup,a0,b0,()=>-.42,0,.85,0x9da5a3);paint(roadGroup,()=>0,.84,0x9da5a3,a0,b0,0,0,null,.86)}}
+ const nTraffic=Math.round(10+trafficIntensity()*8);for(let i=0;i<nTraffic;i++){const opposing=i%2===1,dd=(opposing?125:55)+Math.floor(i/2)*(opposing?92:72)+Math.random()*24,lim=LIM[typeAt(dd)]/3.6;const c=buildCar([0xe9e8df,0x354b59,0xb94e43,0xaab8bc,0xc8a94d][i%5],.9);c.userData={distance:dd,lane:opposing?laneOffset:-laneOffset,direction:opposing?-1:1,speed:Math.min(26,lim*(opposing?.85:.7)+Math.random()*lim*.15),opposing};trafficGroup.add(c)}
+ player.position.set(0,.05,0);player.rotation.y=Math.PI;player.scale.setScalar(1);player.userData.lateral=-laneOffset;worldOrigin=pointAtDistance(0);lastFrameMap=0;
+ applyTime();initLandmarks();chunkUpdate(true);osmPump();if(c1Mode)buildC1Extras();
+}
+function addMarkingMesh(offset,width,color,segments){const v=[],idx=[];let k=0;for(const [a,b] of segments){if(b<=a)continue;const pa=pointAtDistance(a),pb=pointAtDistance(b),ta=tangentAtDistance(a),tb=tangentAtDistance(b),na=new THREE.Vector3(-ta.z,0,ta.x),nb=new THREE.Vector3(-tb.z,0,tb.x);v.push(pa.x+na.x*(offset-width/2),.058,pa.z+na.z*(offset-width/2),pa.x+na.x*(offset+width/2),.058,pa.z+na.z*(offset+width/2),pb.x+nb.x*(offset-width/2),.058,pb.z+nb.z*(offset-width/2),pb.x+nb.x*(offset+width/2),.058,pb.z+nb.z*(offset+width/2));idx.push(k,k+1,k+2,k+1,k+3,k+2);k+=4}if(!v.length)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();roadGroup.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide})));}
+function addRoadPaint(offset,width,color,from,to){const step=(to-from)>50000?12:6,segments=[];for(let d=from;d<to;d+=step)segments.push([d,Math.min(to,d+step)]);addMarkingMesh(offset,width,color,segments)}
+function addDashedLane(offset,width,color,total){const dash=8,gap=12,segments=[];for(let d=0;d<total;d+=dash+gap)segments.push([d,Math.min(total,d+dash)]);addMarkingMesh(offset,width,color,segments)}
+function addMedianBarrier(total){const v=[],idx=[];let k=0;for(let d=0;d<total;d+=8){const a=pointAtDistance(d),b=pointAtDistance(Math.min(total,d+8)),ta=tangentAtDistance(d),tb=tangentAtDistance(Math.min(total,d+8)),na=new THREE.Vector3(-ta.z,0,ta.x),nb=new THREE.Vector3(-tb.z,0,tb.x);for(const [p,n] of [[a,na],[b,nb]])v.push(p.x+n.x*.42,0,p.z+n.z*.42,p.x+n.x*.42,.82,p.z+n.z*.42,p.x-n.x*.42,0,p.z-n.z*.42,p.x-n.x*.42,.82,p.z-n.z*.42);idx.push(k,k+1,k+4,k+1,k+5,k+4,k+2,k+6,k+3,k+3,k+6,k+7);k+=8}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();roadGroup.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x9da5a3,roughness:.8,metalness:.2,side:THREE.DoubleSide})));}
+let roadPos=0,lastFrameMap=0,simSpeed=0,distanceTravelled=0,steer=0,steerInput=0,gasDown=false,brakeDown=false,paused=false,driving=true,collisionTimer=0,collisionCooldown=0,blink='off',hazard=false,viewMode=0,frontGap=null,accelState=0,autoDrive=false,timeScale=+$('timeScale').value;
+function setAutoDrive(v){autoDrive=!!v;$('autoDrive').classList.toggle('active',autoDrive);$('autoDrive').textContent=autoDrive?'关闭自动驾驶':'启动自动驾驶';$('autoDriveQuick').classList.toggle('signal-on',autoDrive);$('autoState').textContent=autoDrive?'自动驾驶运行中 · 可触碰方向盘或油门接管':'自动驾驶关闭 · 可随时接管方向盘';if(autoDrive){driving=true;paused=false;$('pause').textContent='暂停';}}
+$('autoDrive').onclick=()=>setAutoDrive(!autoDrive);$('autoDriveQuick').onclick=()=>setAutoDrive(!autoDrive);
+$('timeScale').onchange=()=>{timeScale=+$('timeScale').value||1};
+$('roadType').onchange=()=>{if(renderer){const was=driving,oldPos=roadPos,oldDist=distanceTravelled;buildWorld();roadPos=oldPos;distanceTravelled=oldDist;driving=was;$('routeStatus').textContent='道路场景已切换：'+$('roadType').selectedOptions[0].textContent+'（场景标志与道路标线已更新）'}};
+function trafficIntensity(){const h=+$('hour').value,weekday=$('dayType').value==='weekday',base=weekday?({7:.7,8:1,9:.75,17:.8,18:1,19:.75}[h]??.35):({11:.7,12:.8,16:.85,17:1,18:.8}[h]??.3);return Math.min(1.5,base*(+$('trafficScale').value/100))}
+function createRoute(){if(routeCoords.length<2)return;gameMode='route';c1Mode=false;parkDone=false;setAutoDrive(false);driving=true;paused=false;$('pause').textContent='暂停';resetBanner();routePos=0;roadPos=0;simSpeed=0;distanceTravelled=0;buildWorld();$('routeStatus').textContent='OSRM 实际道路中心线已载入 · 3D 场景按道路类型生成';$('navText').textContent='真实道路路线';$('navDistance').textContent='OSRM 路线同步';}
+$('routeBtn').onclick=async()=>{if(!start||!end)return;$('routeBtn').disabled=true;const pref=$('routePref').value;$('routeStatus').textContent='正在向 OSRM 请求路线（'+$('routePref').selectedOptions[0].textContent+'）…';
+ try{const base=`https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${end[0]},${end[1]}?overview=full&geometries=geojson&steps=true&alternatives=3`;
+ const rs=await Promise.allSettled([fetchRoute(base),pref==='local'?fetchRoute(base+'&exclude=motorway'):Promise.resolve(null)]);
+ const cand=[];for(const x of rs)if(x.status==='fulfilled'&&x.value?.routes)cand.push(...x.value.routes);if(!cand.length)throw Error('没有找到可行驶路线');
+ const fast=cand[0];cand.forEach(r=>r._m=motorShare(r));let rt=fast,note='';
+ if(pref==='highway'){const ok=cand.filter(r=>r.duration<fast.duration*2.2).sort((a,b)=>b._m-a._m);rt=ok[0]||fast;if(rt._m<.05)note=' · 沿线几乎没有高速，已用最快路线'}
+ else if(pref==='local'){rt=cand.slice().sort((a,b)=>(a._m*3+a.duration/fast.duration)-(b._m*3+b.duration/fast.duration))[0];if(rt._m>.15)note=' · 无法完全避开高速（公共OSRM限制）'}
+ routeCoords=rt.geometry.coordinates;cum=[0];for(let i=1;i<routeCoords.length;i++)cum[i]=cum[i-1]+haversine(routeCoords[i-1],routeCoords[i]);routeLength=cum.at(-1);
+ steps=[];const raw=[];let passed=0;for(const leg of rt.legs||[])for(const st of leg.steps||[]){const a=passed;passed+=st.distance||0;const nm=st.name||'',ref=st.ref||'',mw=(st.intersections||[]).some(i=>(i.classes||[]).includes('motorway')),ty=mw?'expressway':/県道|都道|府道|道道/.test(nm)?'pref':(/^\d{1,3}$/.test(ref)||/国道/.test(nm))?'national':'local';steps.push({name:nm,ref,dest:st.destinations||'',distance:st.distance||0,maneuver:st.maneuver||{},_end:passed});raw.push({a,b:passed,t:ty,ref:ref||nm,name:nm})}
+ const sc=routeLength/(passed||1);routeSegs=[];for(const r of raw){const a=r.a*sc,b=r.b*sc,p=routeSegs[routeSegs.length-1];if(p&&(p.t===r.t||b-a<120))p.b=b;else routeSegs.push({a,b,t:r.t,ref:r.ref,name:r.name})}if(routeSegs.length)routeSegs[0].a=0,routeSegs[routeSegs.length-1].b=routeLength+1;
+ if(routeLayer)map.removeLayer(routeLayer);routeLayer=L.geoJSON(rt.geometry,{style:{color:'#16a98c',weight:5,opacity:.95}}).addTo(map);map.fitBounds(routeLayer.getBounds(),{padding:[20,20]});
+ createRoute();$('routeStatus').textContent=`路线 ${(rt.distance/1000).toFixed(1)} km · ${(rt.duration/60).toFixed(0)} 分钟 · 高速占比 ${Math.round(rt._m*100)}%${note}`;$('startDrive').textContent='开始 / 继续';updateStep()}catch(e){$('routeStatus').textContent='路线失败：'+e.message}finally{$('routeBtn').disabled=false}};
+function updateMapCar(){if(gameMode!=='route'||!routeCoords.length)return;const p=interp(routePos);if(!carMarker)carMarker=L.circleMarker([p[1],p[0]],{radius:6,color:'#fff',weight:2,fillColor:'#1689ff',fillOpacity:1}).addTo(map);else carMarker.setLatLng([p[1],p[0]]);if(!pickMode&&performance.now()-lastMapUpdate>1300){map.panTo([p[1],p[0]],{animate:false});lastMapUpdate=performance.now()}}
+$('freeMode').onclick=()=>{gameMode='free';c1Mode=false;parkDone=false;driving=true;paused=false;resetBanner();routeCoords=[];steps=[];routeLength=0;roadPos=0;simSpeed=0;distanceTravelled=0;buildWorld();$('routeStatus').textContent='自由驾驶练习道路';$('navText').textContent='自由驾驶 · 山路';$('navDistance').textContent='程序生成的连续弯道'};
+$('startDrive').onclick=()=>{driving=true;paused=false;$('pause').textContent='暂停';$('driveHint').textContent='驾驶中 · 松开油门会自然减速'};
+$('resetDrive').onclick=()=>{parkDone=false;resetBanner();setAutoDrive(false);simSpeed=0;roadPos=0;distanceTravelled=0;steer=0;steerInput=0;player.userData.lateral=-laneOffset;collisionTimer=0;collisionCooldown=0;driving=true;paused=false;$('pause').textContent='暂停';$('collisionBanner').classList.remove('show');buildWorld();updateHud()};
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'继续':'暂停'};
+$('menuBtn').onclick=()=>{$('panel').classList.toggle('open');window.setTimeout(()=>map.invalidateSize(),120)};
+function bindHold(id,which){const el=$(id);const on=e=>{e.preventDefault();if(autoDrive)setAutoDrive(false);el.setPointerCapture?.(e.pointerId);if(which==='gas')gasDown=true;else brakeDown=true;el.classList.add('active')};const off=()=>{if(which==='gas')gasDown=false;else brakeDown=false;el.classList.remove('active')};el.addEventListener('pointerdown',on);['pointerup','pointercancel','lostpointercapture','pointerleave'].forEach(ev=>el.addEventListener(ev,off))}
+bindHold('gas','gas');bindHold('brake','brake');
+const pad=$('steerPad'),knob=$('steerKnob');let padPointer=null;
+function padMove(e){const r=pad.getBoundingClientRect(),cx=r.left+r.width/2,dx=(e.clientX-cx)/(r.width*.36);steerInput=THREE.MathUtils.clamp(dx,-1,1);knob.style.transform=`translateX(${steerInput*34}px)`}
+pad.addEventListener('pointerdown',e=>{e.preventDefault();if(autoDrive)setAutoDrive(false);padPointer=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)});
+pad.addEventListener('pointermove',e=>{if(e.pointerId===padPointer)padMove(e)});
+function releasePad(){padPointer=null;steerInput=0;knob.style.transform='translateX(0)'}
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>pad.addEventListener(ev,releasePad));
+function setSignal(v){blink=v;hazard=false;$('signalL').classList.toggle('signal-on',v==='left');$('signalR').classList.toggle('signal-on',v==='right');$('hazard').classList.remove('signal-on')}
+$('signalL').onclick=()=>setSignal(blink==='left'?'off':'left');$('signalR').onclick=()=>setSignal(blink==='right'?'off':'right');$('hazard').onclick=()=>{hazard=!hazard;blink='off';$('hazard').classList.toggle('signal-on',hazard);$('signalL').classList.remove('signal-on');$('signalR').classList.remove('signal-on')};
+const VN=['近景','远景','驾驶舱'];function setView(v){viewMode=v;$('viewBtn').textContent='视角：'+VN[v];$('viewBtn').classList.toggle('signal-on',v===2);camLook.set(0,0,0);if(player)player.children.forEach(o=>{if(o.isMesh)o.visible=v!==2});if(cockpit)cockpit.visible=v===2}
+$('viewBtn').onclick=()=>setView((viewMode+1)%3);
+const KEYCODE={KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',KeyV:'v',KeyQ:'q',KeyE:'e',Space:' ',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'};/* 0.13：按物理键识别，输入法(IME)开启时 e.key='Process' */
+let keys={};window.addEventListener('keydown',e=>{const k=KEYCODE[e.code]||e.key.toLowerCase();if(autoDrive&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k))setAutoDrive(false);keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='v')setView((viewMode+1)%3);if(k==='q')setSignal(blink==='left'?'off':'left');if(k==='e')setSignal(blink==='right'?'off':'right');if(k===' ')paused=!paused});
+window.addEventListener('keyup',e=>keys[KEYCODE[e.code]||e.key.toLowerCase()]=false);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+window.addEventListener('blur',()=>{gasDown=false;brakeDown=false;keys={};steerInput=0});
+function updateHud(){const v=Math.round(simSpeed*3.6),rpm=Math.round(850+Math.min(6500,simSpeed*230+Math.abs(steer)*240));const gear=simSpeed<1?1:Math.min(6,Math.max(1,Math.floor(simSpeed/10)+1));$('speed').textContent=v;$('rpm').textContent=rpm;$('rpmBar').style.width=Math.min(100,rpm/7000*100)+'%';$('gear').textContent=gear;$('distance').textContent=(distanceTravelled/1000).toFixed(2);$('frontGap').textContent=frontGap==null?'—':Math.round(frontGap);$('roadState').textContent=collisionTimer>0?'发生碰撞':Math.abs(player?.userData.lateral||0)>5.5*sceneScale?'偏离道路':'正常'}
+function updatePhysics(dt){if(!driving||paused)return;laneOffset=laneAt(roadPos);let ahead=Infinity;if(autoDrive&&trafficGroup)trafficGroup.children.forEach(c=>{const g=c.userData.distance-roadPos;if(c.userData.direction===1&&g>0&&Math.abs(c.userData.lane-(player.userData.lateral||0))<2.0)ahead=Math.min(ahead,g)});const targetSpeedKmh=autoDrive?AUTOKMH[typeAt(roadPos)]:0;const targetMps=targetSpeedKmh/3.6;const throttle=gasDown||keys.w||keys.arrowup||(autoDrive&&simSpeed<targetMps-.5&&ahead>18);const brake=brakeDown||keys.s||keys.arrowdown||(autoDrive&&(simSpeed>targetMps+.8||ahead<Math.max(12,simSpeed*1.6)));const steerKey=(keys.a||keys.arrowleft?-1:0)+(keys.d||keys.arrowright?1:0);const autoSteer=autoDrive?THREE.MathUtils.clamp(((-laneOffset)-(player.userData.lateral||0))*.12,-.45,.45):0;const target=THREE.MathUtils.clamp((autoDrive?autoSteer:steerInput)+steerKey,-1,1);steerInput=steerInput;const speedKmh=simSpeed*3.6;const accel=throttle?4.0:0;const rolling=0.11+simSpeed*.025;const braking=brake?Math.min(10,2.8+simSpeed*.55):0;simSpeed=Math.max(0,Math.min(47,simSpeed+(accel-rolling-braking)*dt));steer+=(target-steer)*Math.min(1,dt*5.2);const maxYaw=THREE.MathUtils.lerp(.72,.20,Math.min(1,speedKmh/150));const lateralSpeed=Math.sin(steer*maxYaw)*Math.min(simSpeed,22);const lateral=(player.userData.lateral||0)+lateralSpeed*dt;player.userData.lateral=THREE.MathUtils.clamp(lateral,-14*sceneScale,14*sceneScale);parkAssist(dt);const forward=simSpeed*dt;roadPos+=forward;distanceTravelled+=forward;updateScenery();
+if(gameMode==='route'&&routeLength>0){routePos=Math.min(routeLength,roadPos);if(routePos>=routeLength){simSpeed=0;driving=false;setAutoDrive(false);$('routeStatus').textContent=c1Mode?'已到达测试区终点 · 点“重置驾驶”重来':'已抵达目的地 · 已停入车位，可点“重新选择起终点”';$('navText').textContent=c1Mode?'测试区终点':'🅿 已抵达目的地';if(!c1Mode)arrivedBanner()}updateStep()}
+let minGap=Infinity;collisionCooldown=Math.max(0,collisionCooldown-dt);trafficGroup.children.forEach(car=>{car.userData.distance+=car.userData.direction*car.userData.speed*dt;car.userData.lane=Math.sign(car.userData.lane)*laneAt(Math.max(0,car.userData.distance));const gap=car.userData.distance-roadPos;const lateralGap=Math.abs(car.userData.lane-(player.userData.lateral||0));if(!car.userData.opposing&&gap>0&&lateralGap<2.35*sceneScale)minGap=Math.min(minGap,gap);const impactRange=6.2;const longitudinalOverlap=car.userData.opposing?Math.abs(gap)<impactRange:(gap>=0&&gap<impactRange);const isImpact=longitudinalOverlap&&lateralGap<2.35*sceneScale;const closingSpeed=car.userData.opposing?simSpeed+car.userData.speed:Math.max(0,simSpeed-car.userData.speed);if(isImpact&&closingSpeed>0.8&&collisionCooldown<=0){triggerCollision(car.userData.opposing?'与逆行车辆正面碰撞':'追尾碰撞',closingSpeed);collisionCooldown=1.4;simSpeed=Math.max(0,simSpeed*(car.userData.opposing?.22:.42));car.userData.distance=car.userData.opposing?roadPos-22:roadPos+30;}if(car.userData.distance<roadPos-45){car.userData.distance=roadPos+420+Math.random()*260;}const d=Math.max(0,car.userData.distance),p=pointAtDistance(d),tan=tangentAtDistance(d),side=new THREE.Vector3(-tan.z,0,tan.x);car.position.copy(p).addScaledVector(side,car.userData.lane);car.position.y=p.y+.03*sceneScale;car.rotation.y=Math.atan2(tan.x,tan.z)+(car.userData.direction===-1?Math.PI:0);});
+frontGap=minGap===Infinity?null:minGap;
+const lateralNow=player.userData.lateral||0;if(!parkOn()&&Math.abs(lateralNow)>(widthAt(roadPos)/2+.3)){simSpeed=Math.max(0,simSpeed-(Math.abs(lateralNow)-(widthAt(roadPos)/2+.3))*.9*dt);$('physicsNote').textContent='车轮接近路肩，已产生滚动阻力；请向道路中央修正。'}else $('physicsNote').textContent=autoDrive?'自动驾驶 · 目标 '+targetSpeedKmh+' km/h · 跟车与车道保持中':throttle?'油门输入中 · 动力持续输出':brake?'制动中 · 制动力生效':'滑行中 · 空气阻力与滚阻自然减速';
+tick(dt);collisionTimer=Math.max(0,collisionTimer-dt);if(collisionTimer<=0)$('collisionBanner').classList.remove('show');
+}
+function triggerCollision(message,closingSpeed){score=Math.max(0,score-15);collisionTimer=3.0;$('collisionBanner').innerHTML=message+'<small>冲击速度 '+Math.round(closingSpeed*3.6)+' km/h · 已触发碰撞反馈，请减速并回到左侧通行车道</small>';$('collisionBanner').classList.add('show');$('physicsNote').textContent=message+' · 车辆受到冲击，速度已明显下降';$('roadState').textContent='发生碰撞';if(navigator.vibrate)navigator.vibrate([90,45,120]);}
+function renderFrame(){if(!renderer)return;const w=$('game').clientWidth,h=$('game').clientHeight;if(!w||!h)return;const px=renderer.getPixelRatio();if(renderer.domElement.width!==Math.round(w*px)||renderer.domElement.height!==Math.round(h*px)){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+const p=pointAtDistance(roadPos),tan=tangentAtDistance(roadPos),side=new THREE.Vector3(-tan.z,0,tan.x),lat=player.userData.lateral||0;player.position.copy(p).addScaledVector(side,lat);player.position.y=p.y+.05*sceneScale;player.rotation.y=Math.atan2(tan.x,tan.z)-steer*.08;
+const look=p.clone().addScaledVector(tan,(viewMode?30:22));look.y=p.y+2.0;const cam=p.clone().addScaledVector(tan,-(viewMode?28:19)).add(new THREE.Vector3(0,(viewMode?11:7.5),0)).addScaledVector(side,lat*.38);if(viewMode===2&&cockpit){player.updateMatrixWorld();camera.position.copy(player.localToWorld(new THREE.Vector3(-.38,1.22,.1)));const ah=pointAtDistance(roadPos+20).addScaledVector(side,lat*.9);ah.y=1.1;if(!camLook.lengthSq())camLook.copy(ah);camLook.lerp(ah,.35);camera.lookAt(camLook);wheel.rotation.z=-steer*1.4;updCluster()}else{camera.position.lerp(cam,1-Math.pow(.001,1/60));camera.lookAt(look)}camFx();
+if(++fN%20===0){osmPump();lmUpdate(p)}renderer.render(scene,camera);updateMapCar();updateHud()}
+let last=performance.now();function loop(now){requestAnimationFrame(loop);/* 0.13：先预约下一帧——任何异常都不会让整个渲染循环停止 */const dt=Math.min(.04,(now-last)/1000||0);last=now;if(THREE&&renderer&&window.__netActive&&window.__netFrame){window.__netFrame(dt)}else if(THREE&&renderer){let simDt=dt*timeScale;while(simDt>0){const step=Math.min(.04,simDt);updatePhysics(step);simDt-=step;}if(trafficGroup){trafficGroup.children.forEach(car=>{const d=Math.max(0,car.userData.distance),p=pointAtDistance(d),tan=tangentAtDistance(d),side=new THREE.Vector3(-tan.z,0,tan.x);car.position.copy(p).addScaledVector(side,car.userData.lane);car.rotation.y=Math.atan2(tan.x,tan.z)+(car.userData.direction===-1?Math.PI:0)})}renderFrame()}}
+function init(){if(!window.THREE){$('sceneFallback').style.display='flex';return}try{buildWorld();renderer.setSize($('game').clientWidth,$('game').clientHeight,false);$('scene').addEventListener('webglcontextlost',e=>{e.preventDefault();$('sceneFallback').style.display='flex'});window.addEventListener('resize',()=>{if(renderer){renderer.setSize($('game').clientWidth,$('game').clientHeight,false);camera.aspect=$('game').clientWidth/$('game').clientHeight;camera.updateProjectionMatrix()}map.invalidateSize()});loop(performance.now())}catch(e){console.error(e);$('sceneFallback').style.display='flex'}}
+$('trafficScale').addEventListener('input',()=>$('trafficScaleLabel').textContent=$('trafficScale').value+'%');
+/* ===== v0.8 HORIZON SCENIC : road-type segments, JP signage, biomes, sky, day/night, score ===== */
+const WID={local:6.4,pref:7.6,national:9.6,expressway:15},LIM={local:40,pref:50,national:60,expressway:100},KIND={local:'一般道路',pref:'都道府県道',national:'国道',expressway:'高速道路'},AUTOKMH={local:38,pref:48,national:58,expressway:92};
+let SEGS=[{a:0,b:1e9,t:'local'}],routeSegs=null,forced='auto',sched=[],schedBy=new Map(),sigs=[],chunks=new Map(),live=[],curTotal=1e9,score=100,prevPos=0,skyG=null,groundM=null,hemiL=null,sunL=null,headL=null,nightK=0,reflMats=[],skyM=[],protoC=new Map(),geoC=new Map(),matC=new Map(),hudT=0,overT=0;
+const GLOW=new THREE.MeshStandardMaterial({color:0xdfe9ef,emissive:0xffffff,emissiveIntensity:.15}),WINGLOW=new THREE.MeshStandardMaterial({color:0x34505f,emissive:0xffcf80,emissiveIntensity:0}),LAMPGLOW=new THREE.MeshStandardMaterial({color:0xf1e8c6,emissive:0xffe6a0,emissiveIntensity:.2});
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const MC=(c,o={})=>{const k=c+JSON.stringify(o);let m=matC.get(k);if(!m){m=new THREE.MeshStandardMaterial({color:c,roughness:.85,...o});matC.set(k,m)}return m};
+const GB=(w,h,l)=>{const k=w+'|'+h+'|'+l;let g=geoC.get(k);if(!g){g=new THREE.BoxGeometry(w,h,l);geoC.set(k,g)}return g};
+const bx=(p,w,h,l,x,y,z,m)=>{const o=new THREE.Mesh(GB(w,h,l),m);o.position.set(x,y,z);p.add(o);return o};
+const cyl=(p,r,h,x,y,z,m,r2)=>{const k='c'+r+'|'+h+'|'+(r2??r);let g=geoC.get(k);if(!g){g=new THREE.CylinderGeometry(r2??r,r,h,8);geoC.set(k,g)}const o=new THREE.Mesh(g,m);o.position.set(x,y,z);p.add(o);return o};
+const sph=r=>{const k='s'+r;let g=geoC.get(k);if(!g){g=new THREE.SphereGeometry(r,8,6);geoC.set(k,g)}return g};
+const coneU=new THREE.ConeGeometry(1,1,7),icoU=new THREE.IcosahedronGeometry(1,1),cylU=new THREE.CylinderGeometry(1,1,1,6),roofG=new THREE.ConeGeometry(.7071,1,4).rotateY(Math.PI/4);
+const JP='"Noto Sans JP","Yu Gothic","Hiragino Sans","PingFang SC",sans-serif';
+function cv(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=renderer?Math.min(8,renderer.capabilities.getMaxAnisotropy()):4;return t}
+function reflect(g){g.traverse(o=>{const m=o.material;if(m&&m.map&&m.isMeshStandardMaterial&&!m.emissiveMap){m.emissiveMap=m.map;m.emissive=new THREE.Color(0xffffff);m.emissiveIntensity=.3+nightK*.4;reflMats.push(m)}})}
+const proto=(k,fn)=>{let p=protoC.get(k);if(!p){p=fn();reflect(p);protoC.set(k,p)}return p.clone()};
+function plate(w,h,tex,y,poles){const K=y>0?1.5:1,g=new THREE.Group(),pm=MC(0x8e9998,{metalness:.6,roughness:.4});y+=(K-1)*h/2;w*=K;h*=K;for(const px of poles)cyl(g,.05,y+.6,px*K,(y+.6)/2,0,pm);const b=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide,roughness:.5,alphaTest:.5}));b.position.set(0,y,.04);g.add(b);reflect(g);return g}
+const board=(w,h,bg,lines,y=2.6,poles=[-w*.3,w*.3])=>plate(w,h,cv(640,Math.round(640*h/w),(x,W,H)=>{x.fillStyle=bg;x.fillRect(0,0,W,H);x.strokeStyle='#fff';x.lineWidth=12;x.strokeRect(10,10,W-20,H-20);x.fillStyle='#fff';x.textAlign='center';x.textBaseline='middle';lines.forEach((l,i)=>{let fs=Math.min(96,H/(lines.length+.5));x.font='bold '+fs+'px '+JP;const mw=x.measureText(l).width;if(mw>W-50){fs*=(W-50)/mw;x.font='bold '+fs+'px '+JP}x.fillText(l,W/2,H*(i+1)/(lines.length+1))})}),y,poles);
+const disc=(txt,bg,ring,fg)=>plate(1.1,1.1,cv(256,256,x=>{x.fillStyle=ring;x.beginPath();x.arc(128,128,124,0,7);x.fill();x.fillStyle=bg;x.beginPath();x.arc(128,128,96,0,7);x.fill();x.fillStyle=fg;x.font='bold 110px '+JP;x.textAlign='center';x.textBaseline='middle';x.fillText(txt,128,134)}),2.1,[0]);
+const diamond=txt=>plate(1.3,1.3,cv(256,256,x=>{x.fillStyle='#222';x.beginPath();x.moveTo(128,4);x.lineTo(252,128);x.lineTo(128,252);x.lineTo(4,128);x.fill();x.fillStyle='#f6d33e';x.beginPath();x.moveTo(128,24);x.lineTo(232,128);x.lineTo(128,232);x.lineTo(24,128);x.fill();x.fillStyle='#222';x.font='bold 60px '+JP;x.textAlign='center';x.textBaseline='middle';x.fillText(txt,128,134)}),2.2,[0]);
+const xwSign=()=>plate(.9,.9,cv(256,256,x=>{x.fillStyle='#1c5fa8';x.fillRect(0,0,256,256);x.strokeStyle='#fff';x.lineWidth=8;x.strokeRect(6,6,244,244);x.fillStyle='#fff';x.beginPath();x.moveTo(128,34);x.lineTo(228,206);x.lineTo(28,206);x.fill();x.fillStyle='#1c5fa8';x.beginPath();x.arc(128,100,13,0,7);x.fill();x.fillRect(120,116,16,44);x.lineWidth=11;x.strokeStyle='#1c5fa8';x.beginPath();x.moveTo(128,160);x.lineTo(106,196);x.moveTo(128,160);x.lineTo(150,196);x.stroke()}),2.2,[0]);
+function mirror(){const g=new THREE.Group();cyl(g,.04,3,0,1.5,0,MC(0xd9772b));for(const y of[2.9,2.3]){const a=cyl(g,.4,.04,0,y,.06,MC(0xe58a2e));a.rotation.x=Math.PI/2;const f=cyl(g,.34,.045,0,y,.09,MC(0xcfe0ea,{metalness:.9,roughness:.1,emissive:0x223344}));f.rotation.x=Math.PI/2}return g}
+function signal(it){const g=new THREE.Group(),m=[0,1,2].map(()=>new THREE.MeshBasicMaterial({color:0x222222})),sm=MC(0x4e5656);cyl(g,.09,6.2,0,3.1,0,sm);bx(g,5.2,.14,.14,2.6,5.9,0,sm);for(const hx of[1.6,4]){bx(g,1,.34,.3,hx,5.55,0,MC(0x1f2528));[0,1,2].forEach(i=>{const s=new THREE.Mesh(sph(.12),m[i]);s.position.set(hx-.28+i*.28,5.55,.18);g.add(s)})}live.push({it,m,g});return g}
+const lampState=it=>{const t=(performance.now()/1000+it.ph)%30;return t<14?0:t<17?1:2};
+const LC=[0x35e07a,0xffc83a,0xff3a30];
+function lamp(){const g=new THREE.Group(),m=MC(0x626e70,{metalness:.4});cyl(g,.07,7.2,0,3.6,0,m,.1);bx(g,.1,.1,2,0,7.1,1,m);const h=bx(g,.4,.14,.7,0,7,1.9,LAMPGLOW);return g}
+function pole(R){const g=new THREE.Group(),m=MC(0x6b645a);cyl(g,.13,9.5,0,4.75,0,m,.17);bx(g,2.4,.12,.12,0,8.9,0,m);bx(g,1.6,.12,.12,0,8.2,0,m);if(R()<.4)cyl(g,.3,.9,.7,7.4,0,MC(0x59615f));return g}
+const WALL=[0xeee6d8,0xd9cfc0,0xcfd8dc,0xe8d5b8,0xf0ebe0],ROOF=[0x4a5560,0x6b3b34,0x35495c,0x58604f];
+function house(R){const g=new THREE.Group(),w=7+R()*3,l=8+R()*3,h=4.6+R()*1.5;bx(g,w,h,l,0,h/2,0,MC(WALL[R()*5|0]));const r=new THREE.Mesh(roofG,MC(ROOF[R()*4|0]));r.scale.set(w*1.12,2.2,l*1.12);r.position.y=h+1.1;g.add(r);for(const x of[-w*.25,w*.25])bx(g,1.5,1.2,.06,x,2.6,l/2+.03,WINGLOW);bx(g,1,2,.06,0,1,l/2+.03,MC(0x6a5a48));bx(g,w+5,1,.25,0,.5,l/2+3.2,MC(0xb7b2a6));return g}
+function winTex(fl){return proto2('win'+fl,()=>{const mk=(lit)=>cv(128,64,(x,W,H)=>{x.fillStyle=lit?'#000':'#e4e0d6';x.fillRect(0,0,W,H);for(let i=0;i<4;i++){x.fillStyle=lit?(((i*7+fl)%3)?'#ffd990':'#000'):'#4d6575';x.fillRect(10+i*30,14,20,30)}});const a=mk(0),b=mk(1);for(const t of[a,b]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,fl)}return[a,b]})}
+const t2=new Map();function proto2(k,f){if(!t2.has(k))t2.set(k,f());return t2.get(k)}
+function apartment(R){const fl=R()<.5?5:9,g=new THREE.Group(),[a,b]=winTex(fl),m=proto2('am'+fl,()=>{const mm=new THREE.MeshStandardMaterial({map:a,emissiveMap:b,emissive:0xffffff,emissiveIntensity:nightK*1.1,roughness:.9});reflMats.push(mm);mm._win=1;return mm});bx(g,12,fl*3.1,10,0,fl*1.55,0,m);bx(g,4,2,4,0,fl*3.1+1,0,MC(0xb9b9b2));return g}
+function shopSign(t){const bg=['#c0392b','#1f6f4a','#1c5fa8','#7a3d8a','#d98a1c'][t.length%5];return proto('shop'+t,()=>plate(6.2,1.3,cv(512,108,(x,W,H)=>{x.fillStyle=bg;x.fillRect(0,0,W,H);x.fillStyle='#fff';x.font='bold 64px '+JP;x.textAlign='center';x.textBaseline='middle';x.fillText(t,W/2,H/2+4)}),0,[]))}
+function shop(R){const g=new THREE.Group(),h=6.5+R()*2;bx(g,9,h,10,0,h/2,0,MC(WALL[R()*5|0]));bx(g,6.5,2.6,.06,0,1.6,5.03,WINGLOW);const s=shopSign(['ラーメン','薬局','居酒屋','美容室','クリニック','不動産','焼肉','100円'][R()*8|0]);s.position.set(0,3.9,5.1);g.add(s);return g}
+function konbini(){const g=new THREE.Group();bx(g,13,4.2,9,0,2.1,0,MC(0xf4f4f0));bx(g,13.1,.35,9.1,0,3.5,0,MC(0x1ea05a));bx(g,13.1,.3,9.1,0,3.05,0,MC(0xe98a22));bx(g,10,2.2,.06,0,1.5,4.53,WINGLOW);bx(g,17,.04,12,0,.03,10,MC(0x4b4e50));bx(g,13.4,.25,2.2,0,3.9,5.6,MC(0xe9e9e4));const s=proto('kb',()=>plate(1.6,.8,cv(256,128,(x,W,H)=>{x.fillStyle='#1ea05a';x.fillRect(0,0,W,H);x.fillStyle='#fff';x.font='bold 44px '+JP;x.textAlign='center';x.textBaseline='middle';x.fillText('24h',W/2,H*.32);x.font='bold 40px '+JP;x.fillText('コンビニ',W/2,H*.72)}),5.2,[0]));s.position.set(-7,0,8);g.add(s);return g}
+function vend(R){const g=new THREE.Group();bx(g,.85,1.85,.75,0,.93,0,MC([0xd23a32,0x2b64b0,0xe9e9e4,0x2a8a4a][R()*4|0]));bx(g,.7,1.1,.04,0,1.15,.39,GLOW);return g}
+function tree(R,bio){const g=new THREE.Group(),k=R(),s=.8+R()*.7,tr=new THREE.Mesh(cylU,MC(0x5b4634));if(bio==='forest'||k<.35){const H=(bio==='forest'?14:9)*s;tr.scale.set(.25,H*.35,.25);tr.position.y=H*.17;g.add(tr);for(let i=0;i<3;i++){const c=new THREE.Mesh(coneU,MC(0x2c5638+(i<<8)));const r=H*.2*(1.3-i*.25);c.scale.set(r,H*.45,r);c.position.y=H*(.3+i*.26);g.add(c)}}else{const H=7*s;tr.scale.set(.22,H*.5,.22);tr.position.y=H*.25;g.add(tr);const col=bio!=='urban'&&k>.93?0xf0b8c8:[0x4f7d46,0x628a4c,0x3f6b43][R()*3|0],c=new THREE.Mesh(icoU,MC(col));c.scale.set(H*.38,H*.3,H*.38);c.position.y=H*.62;g.add(c)}return g}
+function paddy(){const g=new THREE.Group(),m=proto2('pad',()=>new THREE.MeshStandardMaterial({map:cv(64,64,(x)=>{x.fillStyle='#7fa84f';x.fillRect(0,0,64,64);x.fillStyle='#9cc468';for(let i=0;i<8;i++)x.fillRect(0,i*8+1,64,3);x.fillStyle='#a9a47a';x.fillRect(0,0,64,2)}),roughness:1})),p=new THREE.Mesh(new THREE.PlaneGeometry(26,22),m);p.rotation.x=-Math.PI/2;p.position.y=.05;g.add(p);return g}
+function frameAt(d){const t=tangentAtDistance(d);return{p:pointAtDistance(d),t,n:new THREE.Vector3(-t.z,0,t.x)}}
+function curv(d){const a=tangentAtDistance(d-15),b=tangentAtDistance(d+15);return{a:Math.acos(THREE.MathUtils.clamp(a.dot(b),-1,1)),dir:Math.sign(b.x*(-a.z)+b.z*a.x)}}
+function typeAt(d){if(forced!=='auto')return forced;for(const s of SEGS)if(d<s.b)return s.t;return SEGS[SEGS.length-1].t}
+function widthAt(d){let w=0;for(let k=-40;k<=40;k+=10)w+=WID[typeAt(d+k)];return w/9}
+const laneAt=d=>widthAt(d)*(typeAt(d)==='expressway'?.37:.25);
+const biomeAt=d=>{const n=Math.sin(d*.0011+1.3)+.6*Math.sin(d*.0027+1.7)+.3*Math.sin(d*.007);return n>.7?'urban':n>-.1?'suburb':n>-1?'rural':'forest'};
+function ribbon(pts,half,y,mat,uv){const v=[],u=[],ix=[];for(let i=0;i<pts.length;i++){const t=(i===0?pts[1].clone().sub(pts[0]):i===pts.length-1?pts[i].clone().sub(pts[i-1]):pts[i+1].clone().sub(pts[i-1])).normalize(),h=half(i),p=pts[i];const yy=y>-.3?y+(p.y||0):y;v.push(p.x-t.z*h,yy,p.z+t.x*h,p.x+t.z*h,yy,p.z-t.x*h);u.push(0,uv(i),1,uv(i));if(i<pts.length-1){const a=i*2;ix.push(a,a+1,a+2,a+1,a+3,a+2)}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(u,2));g.setIndex(ix);g.computeVertexNormals();return new THREE.Mesh(g,mat)}
+function paint(par,off,w,color,from,to,dash,gap,pred,y=.058){const v=[],ix=[];let k=0;const L=dash||6,st=dash?dash+gap:6;for(let d=from;d<to;d+=st){if(pred&&!pred(d))continue;const e=Math.min(to,d+L),fa=frameAt(d),fb=frameAt(e);for(const[f,o]of[[fa,off(d)],[fb,off(e)]])v.push(f.p.x+f.n.x*(o-w/2),y+f.p.y,f.p.z+f.n.z*(o-w/2),f.p.x+f.n.x*(o+w/2),y+f.p.y,f.p.z+f.n.z*(o+w/2));ix.push(k,k+1,k+2,k+1,k+3,k+2);k+=4}if(!v.length)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(ix);g.computeVertexNormals();par.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide})))}
+function wall(par,d0,d1,off,y0,y1,color,mo={}){const v=[],ix=[];let i=0;for(let d=d0;d<=d1+.01;d+=5,i++){const f=frameAt(d),o=off(d);v.push(f.p.x+f.n.x*o,y0+f.p.y,f.p.z+f.n.z*o,f.p.x+f.n.x*o,y1+f.p.y,f.p.z+f.n.z*o);if(d+5<=d1+.01)ix.push(2*i,2*i+1,2*i+2,2*i+1,2*i+3,2*i+2)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.userData.own=1;g.setIndex(ix);g.computeVertexNormals();par.add(new THREE.Mesh(g,MC(color,{side:THREE.DoubleSide,roughness:.6,...mo})))}
+function decal(par,d,items,color,y=.075){const f=frameAt(d),v=[],ix=[];let k=0;for(const[a,c,l,w]of items){const cx=f.p.x+f.t.x*a+f.n.x*c,cz=f.p.z+f.t.z*a+f.n.z*c;for(const[sa,sc]of[[-l/2,-w/2],[l/2,-w/2],[-l/2,w/2],[l/2,w/2]])v.push(cx+f.t.x*sa+f.n.x*sc,y+f.p.y,cz+f.t.z*sa+f.n.z*sc);ix.push(k,k+1,k+2,k+1,k+3,k+2);k+=4}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.userData.own=1;g.setIndex(ix);g.computeVertexNormals();par.add(new THREE.Mesh(g,MC(color,{side:THREE.DoubleSide,roughness:.9,polygonOffset:true,polygonOffsetFactor:-2})))}
+function wires(par,P,hw){const v=[];for(const d of P){const f1=frameAt(d),f2=frameAt(d+36),o1=hw(d)+2.4,o2=hw(d+36)+2.4;for(const lat of[-1.1,0,1.1]){const y=lat===0?8.2:8.9;let pr=null;for(let i=0;i<=6;i++){const u=i/6,a=f1.p.clone().lerp(f2.p,u),n=f1.n.clone().lerp(f2.n,u),o=o1+(o2-o1)*u+lat,pt=[a.x+n.x*o,y-1.3*4*u*(1-u),a.z+n.z*o];if(pr)v.push(...pr,...pt);pr=pt}}}if(v.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.userData.own=1;par.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x1c2125})))}}
+function stopText(){return proto2('st',()=>new THREE.MeshBasicMaterial({map:cv(128,256,(x,W,H)=>{x.clearRect(0,0,W,H);x.fillStyle='#f4f4ee';x.font='bold 74px '+JP;x.textAlign='center';x.textBaseline='middle';['止','ま','れ'].forEach((c,i)=>x.fillText(c,W/2,60+i*70))}),transparent:true,side:THREE.DoubleSide,depthWrite:false}))}
+function sideRoad(g,d,s,h){decal(g,d,[[0,s*(h-.4+23),6,46]],0x474a4c,.035)}
+const eref=it=>it.ref&&/^[A-Z]{1,2}\d+/.test(it.ref)?it.ref:'E1';
+function spawn(it,g,put){const d=it.d,h=widthAt(d)/2,t=it.t;switch(it.k){
+ case'speed':put(proto('sp'+it.n,()=>disc(String(it.n),'#fff','#c92830','#111')),d,-1,h+2.4,'face');break;
+ case'minspeed':put(proto('min',()=>disc('50','#1c5fa8','#1c5fa8','#fff')),d,-1,h+2.4,'face');break;
+ case'route':{const num=(String(it.ref).match(/\d+/)||[''])[0];put(proto('rt'+t+(t==='expressway'?eref(it):num),()=>t==='expressway'?board(1.3,.95,'#087c45',[eref(it),'高速道路'],2.2,[0]):makeSign('route',t,num)),d,-1,h+2.8,'face');break}
+ case'gantry':{const X=h+1.3,gr=board(7,2.3,'#087c45',[it.dest||'直進','↑ '+eref(it)],5.3,[]),pm=MC(0x7b8584,{metalness:.5});cyl(gr,.18,6.6,-X,3.3,0,pm);cyl(gr,.18,6.6,X,3.3,0,pm);bx(gr,X*2,.3,.3,0,6.5,0,pm);put(gr,d,0,0,'face');break}
+ case'exit':put(board(3.4,1.9,'#087c45',['出口 '+it.lab,it.dest||'IC','↗'],2.9,[-1.1,1.1]),d,-1,h+3.2,'face');break;
+ case'kilo':put(board(.5,.38,'#087c45',[String(it.km)],1.1,[0]),d,-1,h+1.4,'face');break;
+ case'bguide':put(board(3.4,1.4,'#12699b',[it.dest||'直進','↑'],2.9,[-1.1,1.1]),d,-1,h+3.5,'face');break;
+ case'sign':put(proto('sg'+it.lines.join('|')+it.bg,()=>board(it.w,it.hh,it.bg,it.lines,2.9,[-it.w*.32,it.w*.32])),d,-1,h+3.4,'face');break;
+ case'warnlight':put(proto('wl',()=>diamond('信号')),d,-1,h+2.4,'face');break;
+ case'warnbend':put(proto('wb',()=>makeSign('warning',t)),d,-1,h+2.4,'face');break;
+ case'school':put(proto('sc',()=>diamond('学校')),d,-1,h+2.4,'face');break;
+ case'busstop':{const b=put(proto('bus',()=>board(.9,.7,'#c7782a',['バス停'],2.4,[0])),d,-1,h+1.8,'face');bx(g,2.6,.1,1.3,b.position.x,2.6,b.position.z,MC(0x9aa7ab));break}
+ case'xwalk':{const a=[];for(let c=-h+.7;c<h-.5;c+=.9)a.push([0,c,3.8,.45]);decal(g,d,a,0xf4f4ee);decal(g,d,[[-4.6,-h/2,.45,h-.5]],0xf4f4ee);put(proto('xw',xwSign),d-5,-1,h+1.6,'face');break}
+ case'light':{const a=[];for(let c=-h+.7;c<h-.5;c+=.9)a.push([0,c,3.8,.45]);decal(g,d,a,0xf4f4ee);decal(g,d,[[-4.6,-h/2,.45,h-.5]],0xf4f4ee);sideRoad(g,d,-1,h);sideRoad(g,d,1,h);put(signal(it),d-4.2,-1,h+1.2,'face');break}
+ case'stopj':{sideRoad(g,d,it.s,h);decal(g,d,[[-3.2,-h/2,.45,h-.5]],0xf4f4ee);put(proto('stop',()=>makeSign('stop',t)),d-3,-1,h+2.3,'face');const o=new THREE.Group(),p=new THREE.Mesh(new THREE.PlaneGeometry(1.9,3.6),stopText());p.rotation.set(-Math.PI/2,0,Math.PI);p.position.y=.085;o.add(p);put(o,d-8,-1,h/2,'t');break}
+ case'sidej':sideRoad(g,d,it.s,h);put(proto('mi',mirror),d,-it.s,h+1.4,'bld');break;
+ case'mirror':put(proto('mi',mirror),d,it.s,h+1.6,'bld');break;
+ case'bridge':{if(c1Mode)break;const gr=new THREE.Group(),m=MC(0xb8bcbb);bx(gr,2*(h+8),.9,7,0,6.3,0,m);bx(gr,1.2,6,1.2,h+3.6,3,0,m);bx(gr,1.2,6,1.2,-h-3.6,3,0,m);put(gr,d,0,0,'t');break}
+}}
+function lot(put,d,s,h,bio,r,R){const off=h+9+R()*3;
+ if(bio==='urban'){if(r<.35)put(apartment(R),d,s,h+10+R()*3,'bld');else if(r<.7)put(shop(R),d,s,h+8+R()*2,'bld');else if(r<.78)put(konbini(),d,s,h+15,'bld');else if(r<.9)put(house(R),d,s,off,'bld');else put(vend(R),d,s,h+2.2,'bld')}
+ else if(bio==='suburb'){if(r<.62)put(house(R),d,s,off,'bld');else if(r<.7)put(vend(R),d,s,h+2.2,'bld');else if(r<.74)put(konbini(),d,s,h+15,'bld');else put(tree(R,bio),d,s,h+4+R()*8)}
+ else if(bio==='rural'){if(r<.45)put(paddy(),d,s,h+16,'t');else if(r<.58)put(house(R),d,s,off+4,'bld');else put(tree(R,bio),d,s,h+4+R()*14)}
+ else for(let i=0;i<2;i++)put(tree(R,'forest'),d+i*8,s,h+2.5+R()*10)}
+function genChunk(ci){const g=new THREE.Group(),d0=ci*60,d1=d0+60,R=rng(ci*92821+13),bio=biomeAt(d0+30),t=typeAt(d0+30),hw=d=>widthAt(d)/2,H=hw(d0+30);world.add(g);g.userData.ci=ci;
+ const put=(o,d,s,off,m='t')=>{const f=frameAt(d);o.position.set(f.p.x+f.n.x*s*off,o.position.y+(c1Mode&&off<hw(d)+4?f.p.y:0),f.p.z+f.n.z*s*off);o.rotation.y=m==='face'?Math.atan2(-f.t.x,-f.t.z):m==='bld'?Math.atan2(-f.n.x*s,-f.n.z*s):Math.atan2(f.t.x,f.t.z);g.add(o);return o};
+ for(let d=d0;d<d1;d+=20)for(const s of[-1,1]){const m=new THREE.Mesh(GB(.1,.75,.1),MC(s<0?0xff9a3c:0xf0f0e8));m.position.y=.38;put(m,d,s,hw(d)+.9)}
+ if(t==='expressway'){for(const s of[-1,1])wall(g,d0,d1,d=>s*(hw(d)+.9),.45,.9,0xb5bbbd);if(bio==='urban'||bio==='suburb')for(const s of[-1,1])wall(g,d0,d1,d=>s*(hw(d)+2.4),0,bio==='urban'?4.2:3.2,0xc7d1d5,{transparent:true,opacity:.92})}
+ else if(bio==='forest'||(bio==='rural'&&t!=='local'))wall(g,d0,d1,d=>hw(d)+.9,.45,.85,0xe9ecee);
+ if(t!=='expressway'&&bio!=='forest'){const P=[];for(let d=Math.ceil(d0/36)*36;d<d1;d+=36){put(pole(R),d,1,hw(d)+2.4);P.push(d)}wires(g,P,hw);if(bio==='urban'||t==='national')for(let d=Math.ceil(d0/42)*42;d<d1;d+=42)put(lamp(),d,-1,hw(d)+1.6,'bld')}
+ if(t!=='expressway'){const rl=OBR(d0);for(let k=0;k<3;k++){const d=d0+8+k*20+R()*8;for(const s of[-1,1]){const r=R();if(!rl)lot(put,d,s,hw(d),bio,r,R);else if(bio==='forest'||bio==='rural')put(tree(R,bio),d,s,hw(d)+6+R()*14)}}}
+ else for(let k=0;k<4;k++){const d=d0+5+k*15+R()*8;for(const s of[-1,1]){if(R()<.75){const tr=tree(R,bio==='urban'?'suburb':bio);put(tr,d,s,hw(d)+7+R()*22)}if(bio==='urban'&&R()<.3&&!OBR(d0))put(apartment(R),d,s,hw(d)+15+R()*10,'bld')}}
+ for(const it of schedBy.get(ci)||[])spawn(it,g,put);return g}
+function dropLights(ci){for(let i=live.length-1;i>=0;i--)if(live[i].ci===ci)live.splice(i,1)}
+function chunkUpdate(force){const c0=Math.floor((roadPos-80)/60),c1=Math.floor((roadPos+560)/60);for(const[k,g]of chunks)if(k<c0||k>c1){world.remove(g);g.traverse(o=>{if(o.geometry&&o.geometry.userData.own)o.geometry.dispose()});chunks.delete(k)}let n=0;for(let k=Math.max(0,c0);k<=c1;k++){if(chunks.has(k)||k*60>curTotal)continue;if(!force&&n>=2)break;const before=live.length;chunks.set(k,genChunk(k));for(let i=before;i<live.length;i++)live[i].ci=k;n++}
+ for(let i=live.length-1;i>=0;i--){if(!chunks.has(live[i].ci))live.splice(i,1)}}
+function buildSegs(total){const pref=$('routePref').value;if(gameMode==='route'&&routeSegs&&routeSegs.length){SEGS=routeSegs.map(s=>({...s}));return}
+ const cyc=pref==='highway'?[['expressway',1e9]]:pref==='local'?[['local',1300],['pref',1100],['local',1500],['national',900]]:[['local',1000],['pref',800],['national',1100],['expressway',2200]];SEGS=[];let a=0,i=0;while(a<total+10){const[t,l]=cyc[i++%cyc.length];SEGS.push({a,b:a+l,t,ref:t==='national'?'246':t==='expressway'?'E1':'',name:KIND[t]});a+=l}}
+function nextName(d,R){if(gameMode==='route'){const s=steps.find(s=>s._end>d&&(s.dest||s.name));if(s)return String(s.dest||s.name).split(/[,;]/)[0]}return['東京','横浜','千葉','成田','川崎','新宿','船橋','羽田空港'][R()*8|0]}
+function makeSched(total){const R=rng(777+(total|0));sched=[];sigs=[];schedBy=new Map();
+ for(const s of SEGS){const A=s.a,B=Math.min(s.b,total);if(B-A<30)continue;const t=s.t,add=(d,k,o={})=>{if(d>A+6&&d<total-10)sched.push({d,k,t,ref:s.ref,...o})};add(A+30,'speed',{n:LIM[t]});
+  if(t==='expressway'){add(A+110,'route');for(let d=A+250;d<B-100;d+=850+R()*350)add(d,'gantry',{dest:nextName(d+800,R)});if(B<total)for(const[o,lab]of[[1000,'1km'],[500,'500m'],[120,'出口']])add(B-o,'exit',{lab,dest:nextName(B+50,R)});for(let d=A+400;d<B;d+=1000)add(d,'kilo',{km:Math.round(d/1000)});for(let d=A+1700;d<B;d+=2000)add(d,'minspeed');for(let d=A+600;d<B-100;d+=900+R()*900)add(d,'bridge')}
+  else if(t==='national'){for(let d=A+230;d<B-40;d+=380+R()*260){const ph=R()*30;add(d-140,'warnlight');add(d,'light',{ph});sigs.push({d:d-4.6,kind:'light',ph})}for(let d=A+500;d<B-60;d+=800)add(d,'bguide',{dest:nextName(d+500,R)});add(A+260,'route');for(let d=A+700;d<B;d+=1100)add(d,'speed',{n:LIM[t]});for(let d=A+900;d<B-60;d+=1300+R()*600)add(d,'bridge')}
+  else{for(let d=A+100;d<B-30;d+=140+R()*170){const r=R();if(r<.4){add(d,'stopj',{s:R()<.5?-1:1});sigs.push({d:d-3.2,kind:'stop'})}else if(r<.75)add(d,'sidej',{s:R()<.5?-1:1});else add(d,'xwalk')}for(let d=A+400;d<B-30;d+=850)add(d,'school');for(let d=A+300;d<B-30;d+=600)add(d,'busstop');if(t==='pref')add(A+200,'route');for(let d=A+700;d<B;d+=900)add(d,'speed',{n:LIM[t]})}
+  if(t!=='expressway'){let last=-999;for(let d=A+60;d<B-60;d+=30){const c=curv(d);if(c.a>.3&&d-last>140){last=d;add(d-90,'warnbend');add(d,'mirror',{s:-c.dir||-1})}}}}
+ extraSched(total);for(const it of sched){const k=Math.floor(it.d/60);(schedBy.get(k)||schedBy.set(k,[]).get(k)).push(it)}}
+function buildSky(){skyG=new THREE.Group();const sg=new THREE.SphereGeometry(4800,24,14);sg.setAttribute('color',new THREE.BufferAttribute(new Float32Array(sg.attributes.position.count*3),3));skyG.userData.sphere=sg;const sm=new THREE.Mesh(sg,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false,depthWrite:false}));sm.renderOrder=-10;skyG.add(sm);
+ const bm=c=>{const m=new THREE.MeshBasicMaterial({color:c,fog:false,side:THREE.DoubleSide});skyM.push([m,new THREE.Color(c)]);return m};
+ const pts=[];for(let i=0;i<=20;i++)pts.push(new THREE.Vector2(i/20*1800,900*Math.pow(1-i/20,1.7)));pts.reverse();
+ const fuji=new THREE.Mesh(new THREE.LatheGeometry(pts,28),bm(0x6c82a6)),cap=new THREE.Mesh(new THREE.LatheGeometry(pts.slice(15),28),bm(0xeef3f8));cap.scale.set(1.012,1.012,1.012);fuji.position.set(-2300,0,-2900);cap.position.copy(fuji.position);skyG.add(fuji,cap);
+ const R=rng(5);for(let i=0;i<22;i++){const a=i/22*6.283+R()*.2,r=3600+R()*400,h=200+R()*250,m=new THREE.Mesh(new THREE.ConeGeometry(500+R()*400,h,6),bm([0x7d93ab,0x8aa0b4,0x6f879c][i%3]));m.position.set(Math.cos(a)*r,h/2-4,Math.sin(a)*r);skyG.add(m)}
+ const cm=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,fog:false,depthWrite:false});for(let i=0;i<16;i++){const c=new THREE.Mesh(new THREE.CircleGeometry(250+R()*200,12),cm),a=R()*6.283,r=500+R()*2800;c.rotation.x=-Math.PI/2;c.scale.y=.45;c.position.set(Math.cos(a)*r,700+R()*400,Math.sin(a)*r);skyG.add(c)}
+ scene.add(skyG);groundM=new THREE.Mesh(new THREE.PlaneGeometry(9000,9000),new THREE.MeshStandardMaterial({color:0x6d8a57,roughness:1}));groundM.rotation.x=-Math.PI/2;scene.add(groundM)}
+function applyTime(){if(!skyG)return;const h=+$('hour').value,day=h>=8&&h<=15?1:h===7||h===16?.75:h===6||h===17?.45:h===18||h===5?.25:h===19?.12:0,dusk=[5,6,7,16,17,18].includes(h)?1:0;nightK=1-Math.min(1,day*1.6);const C=THREE.Color,hor=new C(0xbcdbe9).lerp(new C(0xf2a77a),dusk*.9).lerp(new C(0x0e1626),nightK),top=new C(0x4a8cc9).lerp(new C(0x55689f),dusk*.8).lerp(new C(0x04070f),nightK),sg=skyG.userData.sphere,pos=sg.attributes.position,col=sg.attributes.color;
+ for(let i=0;i<pos.count;i++){const k=Math.pow(Math.max(0,pos.getY(i)/4800),.55),c=hor.clone().lerp(top,k);col.setXYZ(i,c.r,c.g,c.b)}col.needsUpdate=true;scene.background=hor.clone();scene.fog.color.copy(hor);groundM.material.color.set(0x6d8a57).multiplyScalar(.3+.7*(1-nightK));
+ for(const[m,c]of skyM)m.color.copy(c).multiplyScalar(1-nightK*.88).lerp(hor,.12);hemiL.intensity=2.35*(1-nightK*.85)-dusk*.5;sunL.intensity=2*day;sunL.color.set(dusk?0xffb27a:0xffe4bf);GLOW.emissiveIntensity=.12+nightK*.9;WINGLOW.emissiveIntensity=nightK*1.1;LAMPGLOW.emissiveIntensity=.2+nightK*2.2;reflMats.forEach(m=>m.emissiveIntensity=m._win?nightK*1.1:.3+nightK*.4);if(headL)headL.intensity=nightK*180;lmMats.forEach(m=>m.emissiveIntensity=nightK*.9)}
+function pen(n,a,b){score=Math.max(0,score-n);collisionTimer=2.4;$('collisionBanner').innerHTML=a+'<small>'+b+'</small>';$('collisionBanner').classList.add('show')}
+function tick(dt){const kmh=simSpeed*3.6,t=typeAt(roadPos),lim=LIM[t];
+ for(const s of sigs){if(s.d>prevPos&&s.d<=roadPos&&!autoDrive&&kmh>8){if(s.kind==='light'&&lampState(s)===2)pen(20,'闯红灯！','信号无视：红灯请在停止线前停车');else if(s.kind==='stop'&&kmh>15)pen(8,'未一时停止','「止まれ」：请在停止线前完全停车')}}prevPos=roadPos;
+ for(const l of live){const st=lampState(l.it);l.m.forEach((m,i)=>m.color.setHex(i===st?LC[i]:0x222222))}
+ if(kmh>lim+10){overT+=dt;if(overT>3)score=Math.max(0,score-dt*2)}else{overT=0;if(kmh>5&&kmh<=lim+3)score=Math.min(100,score+dt*.4)}
+ hudT+=dt;if(hudT>.2){hudT=0;$('limitNum').textContent=lim;$('roadKind').textContent=KIND[t]+(gameMode==='route'&&roadNameAt(roadPos)?' · '+roadNameAt(roadPos):'');$('score').textContent=Math.round(score);$('limitSign').classList.toggle('over',kmh>lim+10)}}
+function camFx(){const k=THREE.MathUtils.clamp(simSpeed/30,0,1),f=(viewMode===2?76:66)+k*(viewMode===2?6:14);if(Math.abs(camera.fov-f)>.05){camera.fov+=(f-camera.fov)*.08;camera.updateProjectionMatrix()}const c=camera.position;if(skyG)skyG.position.set(c.x,0,c.z);if(groundM)groundM.position.set(c.x,-.7,c.z)}
+function motorShare(r){let m=0,a=0;for(const l of r.legs||[])for(const s of l.steps||[]){a+=s.distance||0;if((s.intersections||[]).some(i=>(i.classes||[]).includes('motorway')))m+=s.distance||0}return a?m/a:0}
+$('hour').addEventListener('change',applyTime);
+$('routePref').onchange=()=>{if(gameMode==='route'&&start&&end)$('routeBtn').click();else if(renderer&&gameMode==='free'){buildWorld();$('routeStatus').textContent='自由驾驶道路已按“'+$('routePref').selectedOptions[0].textContent+'”重新生成'}};
+
+/* ===== v0.9: cockpit view, skyline landmarks, real OSM buildings, route fallback ===== */
+let cockpit=null,wheel=null,clusX=null,clusT=null,clusLast=0,camLook=new THREE.Vector3(),fN=0,lmG=null,LMP=[],lmMats=[];
+const OB=new Map(),BLK=1000;let OGEN=0,OBusy=0;
+const OBR=d=>OB.get(Math.floor(d/BLK))?.s===1;
+$('viewBtn').textContent='视角：近景';
+async function fetchRoute(u){for(const h of['https://router.project-osrm.org','https://routing.openstreetmap.de/routed-car']){try{const r=await fetch(u.replace('https://router.project-osrm.org',h)),j=await r.json();if(j.routes?.length)return j}catch(e){}}return null}
+function osmWorld(lat,lon){const o=routeCoords[0];return[(lon-o[0])*111320*Math.cos(o[1]*Math.PI/180),-(lat-o[1])*110540]}
+function dropChunk(k){const g=chunks.get(k);if(!g)return;world.remove(g);g.traverse(o=>{if(o.geometry&&o.geometry.userData.own)o.geometry.dispose()});chunks.delete(k)}
+
+/* ---- cockpit (right-hand drive, Japan) ---- */
+function buildCockpit(){cockpit=new THREE.Group();cockpit.visible=false;const dk=new THREE.MeshLambertMaterial({color:0x15191c}),pl=new THREE.MeshLambertMaterial({color:0x252b2f});
+ const b=(w,h,l,x,y,z,m,rx=0,rz=0)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,l),m);o.position.set(x,y,z);o.rotation.set(rx,0,rz);cockpit.add(o)};
+ b(2.7,.5,.9,-.38,-.64,-.75,dk,-.2);b(.09,1,.12,.62,.02,-.72,pl,0,.4);b(.09,1,.12,-1.42,.02,-.72,pl,0,-.4);b(2.9,.2,.9,-.38,.5,-.5,dk,.12);b(.3,.1,.06,-.38,.3,-.7,dk);
+ b(.3,.16,.1,.85,-.22,-.9,dk);b(.3,.16,.1,-1.62,-.22,-.9,dk);b(1.8,.04,1.3,-.38,-.44,-1.6,new THREE.MeshLambertMaterial({color:0x20a9c4}),-.04);
+ wheel=new THREE.Group();wheel.add(new THREE.Mesh(new THREE.TorusGeometry(.19,.024,8,24),dk));for(const a of[2.1,4.2,0]){const sp=new THREE.Mesh(new THREE.BoxGeometry(.018,.18,.018),dk);sp.position.set(Math.sin(a)*.09,Math.cos(a)*.09,0);sp.rotation.z=-a;wheel.add(sp)}
+ const wh=new THREE.Group();wh.position.set(0,-.3,-.5);wh.rotation.x=-.8;wh.add(wheel);cockpit.add(wh);
+ const c=document.createElement('canvas');c.width=256;c.height=128;clusX=c.getContext('2d');clusT=new THREE.CanvasTexture(c);clusT.colorSpace=THREE.SRGBColorSpace;const cl=new THREE.Mesh(new THREE.PlaneGeometry(.34,.17),new THREE.MeshBasicMaterial({map:clusT}));cl.position.set(0,-.15,-.68);cl.rotation.x=-.25;cockpit.add(cl);
+ scene.add(camera);camera.add(cockpit)}
+function updCluster(){const n=performance.now();if(n-clusLast<90)return;clusLast=n;const x=clusX;x.fillStyle='#071016';x.fillRect(0,0,256,128);x.textAlign='center';x.textBaseline='middle';x.fillStyle='#9ff1d9';x.font='bold 72px sans-serif';x.fillText(Math.round(simSpeed*3.6),128,58);x.fillStyle='#b7c7ce';x.font='bold 20px sans-serif';x.fillText('km/h   AT '+$('gear').textContent,128,108);const on=n%700<350;x.fillStyle='#7dff7a';x.font='bold 34px sans-serif';if(on&&(hazard||blink==='left'))x.fillText('◀',28,36);if(on&&(hazard||blink==='right'))x.fillText('▶',228,36);clusT.needsUpdate=true}
+
+/* ---- skyline landmarks (approximate real positions) ---- */
+const LM=[['東京タワー',35.65861,139.74544,'tt'],['東京スカイツリー',35.71006,139.81073,'sk'],['東京都庁',35.68959,139.69171,'tocho'],['横浜ランドマークタワー',35.45465,139.63189,'sc',296,52],['渋谷スクランブルスクエア',35.65852,139.7022,'sc',230,60],['六本木ヒルズ森タワー',35.66046,139.72919,'sc',238,56],['サンシャイン60',35.72955,139.71938,'sc',240,60],['あべのハルカス',34.64598,135.51385,'sc',300,58],['通天閣',34.65252,135.50631,'tw',103,0xb0b8c0],['京都タワー',34.9875,135.7594,'tw',131,0xf2f2ee],['名古屋テレビ塔',35.17254,136.90836,'tw',180,0xd9dde0],['福岡タワー',33.5933,130.3515,'tw',234,0xeaf0f2],['さっぽろテレビ塔',43.06104,141.35644,'tw',147,0xd8d8d0],['神戸ポートタワー',34.67528,135.18722,'tw',108,0xc8402f],['大阪城',34.6873,135.5259,'cs'],['名古屋城',35.18556,136.8999,'cs'],['姫路城',34.83944,134.69389,'cs'],['熊本城',32.80633,130.7059,'cs'],['松本城',36.23864,137.96864,'cs'],['東京ドーム',35.70564,139.7519,'dome'],['コスモクロック21',35.45518,139.63786,'fw'],['雷門',35.71094,139.7967,'gate']];
+const RAD={tt:55,sk:60,tocho:70,sc:45,tw:25,cs:70,dome:110,fw:55,gate:20},UY=new THREE.Vector3(0,1,0);
+const LMm=(c,e=0)=>{const m=new THREE.MeshStandardMaterial({color:c,roughness:.7,fog:false,emissive:e,emissiveIntensity:0});lmMats.push(m);return m};
+function strut(g,a,b,r,m){const d=b.clone().sub(a),o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),5),m);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(UY,d.normalize());g.add(o)}
+function mkLM(L){const g=new THREE.Group(),V=(x,y,z)=>new THREE.Vector3(x,y,z);g.position.set(L.x,0,L.z);
+ switch(L.t){
+ case'tt':{const O=LMm(0xf0541f,0xff6a1a),W=LMm(0xf4f4f0,0xffe0b0),P=[[40,0],[17,150],[5,250]];for(const sx of[-1,1])for(const sz of[-1,1])for(let i=0;i<2;i++)strut(g,V(sx*P[i][0],P[i][1],sz*P[i][0]),V(sx*P[i+1][0],P[i+1][1],sz*P[i+1][0]),i?1.6:2.4,O);
+  for(const[y,s]of[[60,29],[110,22],[200,10]])for(const[a,b]of[[[1,1],[-1,1]],[[-1,1],[-1,-1]],[[-1,-1],[1,-1]],[[1,-1],[1,1]]])strut(g,V(a[0]*s,y,a[1]*s),V(b[0]*s,y,b[1]*s),.9,W);
+  bx(g,34,12,34,0,150,0,O);bx(g,36,2,36,0,157,0,W);bx(g,14,10,14,0,250,0,O);cyl(g,2.2,83,0,292,0,W,.6);break}
+ case'sk':{const M=LMm(0xdfe8ef,0x9fc8ff);cyl(g,40,350,0,175,0,M,10);cyl(g,22,14,0,350,0,M);cyl(g,10,100,0,400,0,M,8);cyl(g,15,10,0,450,0,M);cyl(g,4,184,0,542,0,M,1);break}
+ case'tocho':{const M=LMm(0x9aa3aa,0xffe2a0);bx(g,70,38,48,0,19,0,M);for(const x of[-24,24]){bx(g,28,160,34,x,80,0,M);bx(g,22,83,28,x,201,0,M)}break}
+ case'sc':{const M=LMm(0xaebfcc,0xffe2a0),h=L.a,w=L.b;bx(g,w,h*.72,w*.8,0,h*.36,0,M);bx(g,w*.78,h*.28,w*.62,0,h*.86,0,M);break}
+ case'tw':{const M=LMm(L.b,0xffe3a0),h=L.a;cyl(g,h*.09,h*.78,0,h*.39,0,M,h*.025);cyl(g,h*.1,h*.06,0,h*.66,0,M);cyl(g,h*.012,h*.3,0,h*.9,0,M);break}
+ case'cs':{const S=LMm(0x8d8f89),Wh=LMm(0xf1efe8),Rf=LMm(0x3f4a52);bx(g,70,14,56,0,7,0,S);let y=14,w=26,l=20;for(let i=0;i<3;i++){bx(g,w,9,l,0,y+4.5,0,Wh);const r=new THREE.Mesh(roofG,Rf);r.scale.set(w*1.35,7,l*1.35);r.position.y=y+12.5;g.add(r);y+=12;w*=.72;l*=.72}break}
+ case'dome':{const m=new THREE.Mesh(new THREE.SphereGeometry(1,20,10,0,Math.PI*2,0,Math.PI/2),LMm(0xf4f4f0,0xffffff));m.scale.set(100,50,100);g.add(m);break}
+ case'fw':{const M=LMm(0xf0f0f4,0x88aaff),r=new THREE.Mesh(new THREE.TorusGeometry(50,1.4,6,40),M);r.position.y=61;g.add(r);for(let i=0;i<10;i++){const a=i/10*Math.PI;strut(g,V(Math.cos(a)*50,61+Math.sin(a)*50,0),V(-Math.cos(a)*50,61-Math.sin(a)*50,0),.35,M)}strut(g,V(-22,0,0),V(0,61,0),1.5,M);strut(g,V(22,0,0),V(0,61,0),1.5,M);break}
+ case'gate':{const R=LMm(0xc7372b,0x401008),B=LMm(0x32363a);for(const x of[-7,7])for(const z of[-3,3])bx(g,1.6,10,1.6,x,5,z,R);bx(g,20,2,9,0,11,0,R);bx(g,24,2.4,11,0,12.9,0,B);bx(g,26,1.2,13,0,14.5,0,B);const t=new THREE.Mesh(sph(2.4),LMm(0xd8302a,0xff3020));t.scale.y=1.4;t.position.y=6.5;g.add(t);break}
+ }return g}
+function initLandmarks(){if(lmG)scene.remove(lmG);lmG=new THREE.Group();scene.add(lmG);lmMats.length=0;LMP=[];if(gameMode!=='route'||!routeCoords.length)return;for(const L of LM){const[x,z]=osmWorld(L[1],L[2]);LMP.push({x,z,t:L[3],a:L[4],b:L[5],r:RAD[L[3]]||40,m:null})}destLot()}
+function lmUpdate(p){for(const L of LMP){const n=Math.hypot(L.x-p.x,L.z-p.z)<6500;if(n&&!L.m){L.m=mkLM(L);lmG.add(L.m);applyTime()}if(L.m)L.m.visible=n}}
+
+/* ---- real OSM buildings along the route (streamed in 1 km blocks) ---- */
+let OBMat=null,ORMat=null;
+function osmMats(){if(OBMat)return;const mk=lit=>{const t=cv(64,64,x=>{x.fillStyle=lit?'#000':'#ece9e0';x.fillRect(0,0,64,64);for(let i=0;i<4;i++){x.fillStyle=lit?(Math.random()<.5?'#ffd990':'#000'):'#5d7686';x.fillRect(10,12,44,30)}});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1/3.4,1/3.2);return t};
+ OBMat=new THREE.MeshStandardMaterial({map:mk(0),emissiveMap:mk(1),emissive:0xffffff,emissiveIntensity:nightK*1.1,vertexColors:true,roughness:.9});OBMat._win=1;reflMats.push(OBMat);ORMat=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.85})}
+function osmMesh(b,els){osmMats();const g=new THREE.Group(),Wd={p:[],c:[],u:[]},Rf={p:[],c:[]},a0=Math.max(0,b*BLK-90),a1=Math.min(routeLength,(b+1)*BLK+90);
+ let i0=0,i1=roadPoints.length-2;while(i0<i1&&roadCum[i0+1]<a0)i0++;while(i1>i0&&roadCum[i1]>a1)i1--;
+ const near=(x,z)=>{let m=1e18;for(let i=i0;i<=i1&&i<roadPoints.length-1;i++){const A=roadPoints[i],B=roadPoints[i+1],dx=B.x-A.x,dz=B.z-A.z,t=Math.max(0,Math.min(1,((x-A.x)*dx+(z-A.z)*dz)/(dx*dx+dz*dz||1))),ex=A.x+dx*t-x,ez=A.z+dz*t-z;m=Math.min(m,ex*ex+ez*ez)}return Math.sqrt(m)};
+ const rings=[];for(const el of els){if(el.type==='way'&&el.geometry&&el.tags?.building)rings.push([el,el.geometry]);else if(el.type==='relation'&&el.tags?.building)for(const m of el.members||[])if(m.role==='outer'&&m.geometry)rings.push([el,m.geometry])}
+ const col=(v,d)=>{try{return new THREE.Color(v)}catch(e){return new THREE.Color(d)}};let n=0;
+ for(const[el,gm]of rings){if(n>1100||gm.length<4)continue;const f=gm[0],l=gm[gm.length-1];if(f.lat!==l.lat||f.lon!==l.lon)continue;const w=gm.slice(0,-1).map(q=>osmWorld(q.lat,q.lon));
+  const cx=w.reduce((a,p)=>a+p[0],0)/w.length,cz=w.reduce((a,p)=>a+p[1],0)/w.length;if(LMP.some(L=>Math.hypot(cx-L.x,cz-L.z)<L.r))continue;
+  if(w.some(p=>near(p[0],p[1])<5.2))continue;
+  const tg=el.tags||{},id=el.id,wr=tg.amenity==='place_of_worship'||/^(temple|shrine)$/.test(tg.building),H=Math.min(250,parseFloat(tg.height)||(+tg['building:levels']*3.2)||({house:6.5,detached:6.5,residential:8,apartments:20,commercial:16,retail:10,industrial:9,warehouse:8,garage:3,shed:3,temple:9,shrine:6,church:12,office:30}[tg.building]||6+(id%5)*1.8));
+  const wc=tg['building:colour']?col(tg['building:colour'],WALL[id%5]):new THREE.Color(WALL[id%5]),rc=tg['roof:colour']?col(tg['roof:colour'],ROOF[id%4]):new THREE.Color(wr?0x4b5a56:ROOF[id%4]);
+  let ar=0;for(let i=0;i<w.length;i++){const p=w[i],q=w[(i+1)%w.length];ar+=p[0]*q[1]-q[0]*p[1]}ar=Math.abs(ar)/2;if(ar<6)continue;
+  const geo=new THREE.ExtrudeGeometry(new THREE.Shape(w.map(p=>new THREE.Vector2(p[0],-p[1]))),{depth:H,bevelEnabled:false,curveSegments:1,steps:1});geo.rotateX(-Math.PI/2);
+  const P=geo.attributes.position.array,U=geo.attributes.uv.array;
+  for(const gr of geo.groups){const wall=gr.materialIndex===1;for(let i=gr.start;i<gr.start+gr.count;i++){if(wall){Wd.p.push(P[i*3],P[i*3+1],P[i*3+2]);Wd.u.push(U[i*2],U[i*2+1]);Wd.c.push(wc.r,wc.g,wc.b)}else if(P[i*3+1]>H-.01){Rf.p.push(P[i*3],P[i*3+1],P[i*3+2]);Rf.c.push(rc.r,rc.g,rc.b)}}}
+  geo.dispose();n++;
+  if(H<=12&&ar>20&&ar<500){let th=0,bl=0;for(let i=0;i<w.length;i++){const p=w[i],q=w[(i+1)%w.length],le=Math.hypot(q[0]-p[0],q[1]-p[1]);if(le>bl){bl=le;th=Math.atan2(q[1]-p[1],q[0]-p[0])}}
+   const co=Math.cos(th),si=Math.sin(th);let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9;for(const p of w){const u=p[0]*co+p[1]*si,v=-p[0]*si+p[1]*co;u0=Math.min(u0,u);u1=Math.max(u1,u);v0=Math.min(v0,v);v1=Math.max(v1,v)}
+   const cu=(u0+u1)/2,cv=(v0+v1)/2,a=(u1-u0)/2*1.06,bb=(v1-v0)/2*1.06,rh=wr?3.5:Math.min(3,1.2+Math.min(a,bb)*.45),Wp=(u,v,y)=>[(cu+u)*co-(cv+v)*si,y,(cu+u)*si+(cv+v)*co],T=(A,B,C)=>{for(const q of[A,B,C]){Rf.p.push(q[0],q[1],q[2]);Rf.c.push(rc.r,rc.g,rc.b)}};
+   const c1=Wp(-a,-bb,H),c2=Wp(a,-bb,H),c3=Wp(a,bb,H),c4=Wp(-a,bb,H);
+   if(a>=bb){const d=a-bb,r1=Wp(-d,0,H+rh),r2=Wp(d,0,H+rh);T(c1,c2,r2);T(c1,r2,r1);T(c3,c4,r1);T(c3,r1,r2);T(c4,c1,r1);T(c2,c3,r2)}
+   else{const d=bb-a,r1=Wp(0,-d,H+rh),r2=Wp(0,d,H+rh);T(c1,c2,r1);T(c3,c4,r2);T(c4,c1,r1);T(c4,r1,r2);T(c2,c3,r2);T(c2,r2,r1)}}}
+ const mk=(A,mat)=>{if(!A.p.length)return;const q=new THREE.BufferGeometry();q.setAttribute('position',new THREE.Float32BufferAttribute(A.p,3));q.setAttribute('color',new THREE.Float32BufferAttribute(A.c,3));if(A.u)q.setAttribute('uv',new THREE.Float32BufferAttribute(A.u,2));q.computeVertexNormals();q.userData.own=1;g.add(new THREE.Mesh(q,mat))};
+ osmProps(g,els,near);mk(Wd,OBMat);mk(Rf,ORMat);return g}
+async function osmFetch(b){const G=OGEN;try{const a=b*BLK,e=Math.min(routeLength,a+BLK),P=[];for(let d=a;d<=e+1;d+=30){const p=interp(Math.min(d,routeLength));P.push(p[1].toFixed(5),p[0].toFixed(5))}const Q=P.join(',');
+  const j=await fetchOverpass(`[out:json][timeout:40];(way(around:75,${Q})[building];rel(around:75,${Q})[building];way(around:120,${Q})[natural=water];way(around:120,${Q})[waterway~"^(river|canal)$"];node(around:45,${Q})[natural=tree];node(around:30,${Q})[highway=street_lamp];node(around:30,${Q})[highway=bus_stop];node(around:30,${Q})[amenity=vending_machine];);out geom 3000;`);if(G!==OGEN||gameMode!=='route')return;
+  const g=osmMesh(b,j.elements||[]);OB.set(b,{s:1,g});world.add(g);for(const k of[...chunks.keys()])if(Math.floor(k*60/BLK)===b&&k*60>roadPos+40)dropChunk(k)}catch(err){if(G===OGEN)OB.set(b,{s:2})}}
+function osmPump(){if(c1Mode||OBusy||gameMode!=='route'||routeLength<=0)return;const cur=Math.floor(roadPos/BLK);for(const[b,v]of OB)if(b<cur-1&&v.g){world.remove(v.g);v.g.traverse(o=>{if(o.geometry&&o.geometry.userData.own)o.geometry.dispose()});OB.set(b,{s:3})}
+ for(let b=cur;b<=cur+3&&b*BLK<routeLength;b++)if(!OB.has(b)){OB.set(b,{s:0});OBusy=1;osmFetch(b).finally(()=>{OBusy=0});return}}
+
+
+/* ---- v0.9.1: arrival parking, new trip, street signs, street furniture ---- */
+let parkDone=false;
+const parkOn=()=>!c1Mode&&gameMode==='route'&&routeLength>0&&!parkDone&&routeLength-roadPos<100;
+function resetBanner(){const b=$('collisionBanner');b.classList.remove('show');b.style.borderColor=b.style.background=''}
+function arrivedBanner(){steer=0;parkDone=true;const b=$('collisionBanner');b.innerHTML='🅿 已抵达目的地<small>已停入车位 · 点“重新选择起终点”开始新行程</small>';b.style.borderColor='#67e0c1';b.style.background='#10392fee';b.classList.add('show')}
+function parkAssist(dt){if(!parkOn())return;if(autoDrive)setAutoDrive(false);const rem=routeLength-roadPos;simSpeed=Math.max(1.2,Math.min(simSpeed,rem*.2));const bay=-(widthAt(roadPos)/2+4.6),lat=player.userData.lateral||0;player.userData.lateral=lat+(bay-lat)*Math.min(1,dt*(rem<45?1.8:.35));steer=THREE.MathUtils.clamp((bay-lat)*.25,-.5,.5);if($('physicsNote'))$('physicsNote').textContent='目的地接近 · 自动入库停车'}
+function destLot(){if(c1Mode||gameMode!=='route'||routeLength<50)return;const d=routeLength-.5,c=-(widthAt(d)/2+4.6),f=frameAt(d);decal(roadGroup,d,[[0,c,36,6.8]],0x54585a,.04);const ln=[];for(let a=-15;a<=15;a+=6)ln.push([a,c,.28,6.4]);ln.push([0,c-3.3,36,.28],[0,c+3.3,36,.28]);decal(roadGroup,d,ln,0xf4f4ee,.075);
+ const bm=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,140,16,1,true),new THREE.MeshBasicMaterial({color:0x67e0c1,transparent:true,opacity:.3,fog:false,side:THREE.DoubleSide,depthWrite:false}));bm.position.set(f.p.x+f.n.x*c,70,f.p.z+f.n.z*c);roadGroup.add(bm);
+ const sg=board(1.3,1.3,'#1c5fa8',['P','駐車場'],2,[0]);sg.position.copy(f.p).addScaledVector(f.t,-14).addScaledVector(f.n,c+3.9);sg.position.y=0;sg.rotation.y=Math.atan2(-f.t.x,-f.t.z);roadGroup.add(sg)}
+$('newTrip').onclick=()=>{setAutoDrive(false);start=null;end=null;for(const m of[startMarker,endMarker,routeLayer,carMarker])if(m)map.removeLayer(m);startMarker=endMarker=routeLayer=carMarker=null;routeSegs=null;$('routeBtn').disabled=true;$('freeMode').onclick();$('startDrive').textContent='开始 / 继续';$('pickStart').onclick()}
+function roadNameAt(d){if(gameMode!=='route'||!steps.length)return'';const sc=routeLength/(steps.at(-1)._end||1),s=steps.find(s=>s._end*sc>d);return s?.name||''}
+function extraSched(total){if(gameMode!=='route'||!steps.length)return;const sc=routeLength/(steps.at(-1)._end||1),P=(d,o)=>{if(d>25&&d<total-25)sched.push({d,k:'sign',t:typeAt(d),...o})};
+ for(let d=150;d<total-40;d+=300){const n=roadNameAt(d);if(n&&typeAt(d)!=='expressway')P(d,{lines:[n],w:2.6,hh:.8,bg:'#12699b'})}
+ for(let d=2000;d<total-300;d+=2000)P(d,{lines:['目的地まで','あと '+((total-d)/1000).toFixed(1)+' km'],w:2.2,hh:1,bg:'#087c45'});
+ const MJ={left:'← 左方向','slight left':'↖ 斜め左','sharp left':'← 左折',right:'→ 右方向','slight right':'↗ 斜め右','sharp right':'→ 右折'};
+ steps.forEach((s,i)=>{const m=s.maneuver||{},j=MJ[m.modifier];if(!j||!['turn','end of road','fork','off ramp','on ramp'].includes(m.type))return;const d0=(i?steps[i-1]._end:0)*sc,nm=s.name||String(s.dest||'').split(/[,;]/)[0],g=typeAt(d0)==='expressway'?'#087c45':'#12699b';P(d0-200,{lines:['約200m先',j,nm].filter(Boolean),w:3,hh:1.3,bg:g});P(d0-30,{lines:[j,nm].filter(Boolean),w:2.6,hh:1,bg:g})});
+ for(const it of sched.slice())if(it.k==='light'){const n=roadNameAt(it.d+25)||roadNameAt(it.d);if(n)P(it.d-55,{lines:[n+' 交差点'],w:2.6,hh:.75,bg:'#12699b'})}}
+function osmProps(g,els,near){let nt=0;const wm=MC(0x4f86a8,{roughness:.3,metalness:.1,side:THREE.DoubleSide});
+ for(const el of els){const t=el.tags||{};
+  if(el.type==='node'){const[x,z]=osmWorld(el.lat,el.lon);if(near(x,z)<2.2)continue;const R=rng(el.id%100000);let o=null;
+   if(t.natural==='tree'){if(nt++>150)continue;o=tree(R,'suburb')}else if(t.highway==='street_lamp')o=lamp();else if(t.amenity==='vending_machine')o=vend(R);else if(t.highway==='bus_stop'){o=new THREE.Group();bx(o,2.6,.1,1.3,0,2.4,0,MC(0x9aa7ab));bx(o,.06,2.4,.06,-1.2,1.2,0,MC(0x777f7d));bx(o,.06,2.4,.06,1.2,1.2,0,MC(0x777f7d))}
+   if(o){o.position.set(x,0,z);o.rotation.y=R()*6.28;g.add(o)}}
+  else if(el.geometry&&t.natural==='water'&&el.geometry.length>3){const w=el.geometry.map(q=>osmWorld(q.lat,q.lon)),m=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(w.map(p=>new THREE.Vector2(p[0],-p[1])))),wm);m.geometry.rotateX(-Math.PI/2);m.geometry.userData.own=1;m.position.y=-.1;g.add(m)}
+  else if(el.geometry&&/^(river|canal)$/.test(t.waterway)){const w=el.geometry.map(q=>osmWorld(q.lat,q.lon)),v=[],ix=[];w.forEach((p,i)=>{const a=w[Math.max(0,i-1)],b=w[Math.min(w.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;v.push(p[0]-dz*7,-.1,p[1]+dx*7,p[0]+dz*7,-.1,p[1]-dx*7);if(i<w.length-1){const k=i*2;ix.push(k,k+1,k+2,k+1,k+3,k+2)}});const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(v,3));gg.setIndex(ix);gg.computeVertexNormals();gg.userData.own=1;g.add(new THREE.Mesh(gg,wm))}}}
+
+
+/* ===== v0.10: C1 test section built with Road3D. ESTIMATED geometry (accuracy L1) — NOT surveyed Shuto Expressway data ===== */
+let c1Mode=false,c1Road=null,c1Ramp=null;
+function c1Build(){const pts=[];for(let i=0;i<=140;i++){const t=i*10,amp=.2+.8*Road3D.smooth((t-150)/350)*(1-Road3D.smooth((t-1000)/350));pts.push([70*Math.sin(t/220)*amp,-t])}
+ c1Road=Road3D.makeRoad({id:'C1-test',points:pts,lanes:4,laneW:3.5,shoulder:.75,designKmh:60,elevation:[{s:0,y:0},{s:300,y:12},{s:1500,y:12}],accuracy:'L1',estimated:true});
+ c1Ramp=Road3D.makeRamp(c1Road,{id:'C1-off',s0:700,s1:800,side:-1,exitTurn:.9,length:260,lanes:1})}
+function c1Points(){c1Build();routeLength=c1Road.total;roadCum=c1Road.F.map(f=>f.s);return c1Road.F.map(f=>new THREE.Vector3(f.x,f.y,f.z))}
+function c1Girder(road,half){const v=[],ix=[],F=road.F,th=1.15;for(let i=0;i<F.length;i++){const f=F[i],c=road.type(f.s)==='elevated';const h=half(f.s),b=c?th:0;
+  v.push(f.x+f.nx*h,f.y-.02,f.z+f.nz*h, f.x+f.nx*(h-.8),f.y-b,f.z+f.nz*(h-.8), f.x-f.nx*(h-.8),f.y-b,f.z-f.nz*(h-.8), f.x-f.nx*h,f.y-.02,f.z-f.nz*h);
+  if(i<F.length-1){const a=i*4,n=a+4;for(const[p,q]of[[0,1],[1,2],[2,3]])ix.push(a+p,a+q,n+p,a+q,n+q,n+p)}}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(ix);g.computeVertexNormals();g.userData.own=1;return new THREE.Mesh(g,MC(0xb9b8b0,{side:THREE.DoubleSide,roughness:.9}))}
+function c1Pier(g,p,f,wd){const col=cyl(g,1.15,p.h-1.5,0,(p.h-1.5)/2,0,MC(0xc4c2ba));const cap=bx(g,wd,1.3,2.6,0,p.h-1.9,0,MC(0xb4b2aa));g.rotation.y=Math.atan2(f.tx,f.tz);g.position.set(p.x,0,p.z)}
+function buildC1Extras(){if(!c1Road)return;const grp=new THREE.Group();grp.add(c1Girder(c1Road,()=>7.5));
+ for(const p of Road3D.piers(c1Road,30,3)){const g=new THREE.Group();c1Pier(g,p,c1Road.at(p.s),14.5);grp.add(g)}
+ if(c1Ramp){const m=Road3D.deckMesh(c1Ramp,1),G=new THREE.BufferGeometry(),pos=m.pos.slice();for(let i=1;i<pos.length;i+=3)pos[i]+=.03;G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setIndex(m.idx);G.computeVertexNormals();G.userData.own=1;grp.add(new THREE.Mesh(G,new THREE.MeshStandardMaterial({color:0x3d4244,roughness:1,side:THREE.DoubleSide})));
+  for(const p of Road3D.piers(c1Ramp,26,3)){const g=new THREE.Group();c1Pier(g,p,c1Ramp.at(p.s),Math.max(5,c1Ramp.width(p.s)+1.5));grp.add(g)}}
+ roadGroup.add(grp)}
+$('c1Test').onclick=()=>{c1Mode=true;gameMode='route';routeCoords=[];steps=[];routeSegs=[{a:0,b:1e9,t:'expressway',ref:'C1',name:'都心環状線'}];routePos=0;roadPos=0;simSpeed=0;distanceTravelled=0;parkDone=false;setAutoDrive(false);driving=true;paused=false;$('pause').textContent='暂停';resetBanner();buildWorld();
+ $('routeStatus').textContent='首都高C1测试区：几何为程序估算（L1），不是实测数据；匝道目前仅为外观，不可驶入';$('navText').textContent='C1 テスト区間';$('navDistance').textContent='估算数据 · L1';$('startDrive').textContent='开始 / 继续'};
+
+init();
+$('c1Quick').onclick=()=>$('c1Test').onclick();if(typeof location!=='undefined'&&location.hash==='#c1')$('c1Test').onclick();
+
+
+
+
+
+
+
+/*NETGLUE-BEGIN*/
+/* netglue.js — 页面“路网驾驶（实验）”模式的粘合层。【尚未真实浏览器验证】
+ * 数据流：C1Scenario.build() → RoadNet → RoadMesh.build()（纯数组）→ 这里转成 THREE 网格；
+ * 每帧：键盘/Nav 代理 → DriveSim.step（动力学→碰撞/归属）→ 把车与相机摆到结果位置。不使用 1D 轨道 roadPos。*/
+(function () {
+  const NS = window.__NET; if (!NS) return;
+  let camOverride = null, active = false, grp = null, sim = null, scen = null, agent = null, route = null, auto = false, cockpit = false, steerS = 0, keysN = {}, hudEl = null, info = { frames: 0, events: {}, maxJump: 0 };
+  const $ = id => document.getElementById(id);
+  function geo(b) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3)); g.setIndex(b.idx); g.computeVertexNormals(); return g }
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .95, side: THREE.DoubleSide }, o));
+  function buildScene() {
+    scen = NS.C1Scenario.build(); const mesh = NS.RoadMesh.build(scen.net); grp = new THREE.Group(); grp.name = 'netGroup';
+    const asph = mat(0x3d4244, { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), wh = new THREE.MeshBasicMaterial({ color: 0xf4f4ee, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), conc = mat(0xb9b8b0), rail = mat(0x9aa0a4);
+    const stats = { deck: 0, marks: 0, barrier: 0, piers: 0 };
+    for (const [id, o] of Object.entries(mesh)) {
+      const d = new THREE.Mesh(geo(o.deck), asph); d.name = 'deck:' + id; grp.add(d); stats.deck++;
+      if (o.marks.white.pos.length) { const m = new THREE.Mesh(geo(o.marks.white), wh); m.name = 'marks:' + id; grp.add(m); stats.marks++ }
+      if (o.barrier) { const m = new THREE.Mesh(geo(o.barrier), rail); m.name = 'barrier:' + id; grp.add(m); stats.barrier++ }
+      for (const p of o.piers) { const h = Math.max(.5, p.topY - p.groundY), g = new THREE.Group(), col = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, h, 12), conc); col.position.y = p.groundY + h / 2; const cap = new THREE.Mesh(new THREE.BoxGeometry(p.w * 2, 1, 2.4), conc); cap.position.y = p.topY - .5; g.add(col, cap); g.position.set(p.x, 0, p.z); g.rotation.y = Math.atan2(p.tx, p.tz); g.name = 'pier'; grp.add(g); stats.piers++ }
+    }
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0x6c7a62, roughness: 1 })); ground.rotation.x = -Math.PI / 2; ground.position.y = -.08; ground.position.z = -900; grp.add(ground);
+    scene.add(grp); info.meshStats = stats;
+  }
+  function reset() { sim = new NS.DriveSim.DriveSim(scen.net, scen.spawn); route = NS.Nav.route(scen.net, 'city_in', 'city_out'); agent = NS.Nav.agent(scen.net, route); info.events = {}; info.maxJump = 0 }
+  function enter() {
+    if (!window.THREE) { alert('three.js 没有加载，路网驾驶无法启动（依赖加载问题，不是驾驶代码问题）'); return }
+    if (!renderer) { alert('3D 渲染器尚未创建：页面初始化失败，请打开开发者工具 Console 查看错误'); return }
+    try {
+      [roadGroup, world, trafficGroup].forEach(g => g && (g.visible = false)); buildScene(); reset();
+      if (!hudEl) { hudEl = document.createElement('div'); hudEl.style.cssText = 'position:absolute;left:14px;top:190px;z-index:860;background:rgba(0,0,0,.6);color:#fff;font:12px/1.5 monospace;padding:8px 10px;border-radius:6px;max-width:380px;pointer-events:none'; $('game').appendChild(hudEl) }
+      hudEl.style.display = 'block'; errMsg = null; rec = []; simT = 0; log('enter', { spawn: scen.spawn });
+      $('routeStatus') && ($('routeStatus').textContent = '路网驾驶（实验）：C1 估算数据 L1，非首都高实测');
+      $('navText').textContent = '路网驾驶 · C1 估算'; $('navDistance').textContent = 'W/S/A/D · S 停稳后倒车 · R 重置 · V 视角 · T 自动 · L 导出记录';
+      active = true; window.__netActive = true; logBtn.style.display = 'block';
+      try { document.activeElement && document.activeElement.blur && document.activeElement.blur() } catch (e) { }   // 按钮保持焦点时空格会再次“点击”它
+    } catch (err) { active = false; window.__netActive = false; [roadGroup, world, trafficGroup].forEach(g => g && (g.visible = true)); showErr('进入路网驾驶失败: ' + (err && err.stack || err)) }
+  }
+  function leave() { active = false; window.__netActive = false; logBtn.style.display = 'none'; if (grp) { scene.remove(grp); grp.traverse(o => { if (o.geometry) o.geometry.dispose() }); grp = null } [roadGroup, world, trafficGroup].forEach(g => g.visible = true); if (hudEl) hudEl.style.display = 'none'; buildWorld() }
+  /* 键名：优先用物理键 e.code（输入法/IME 开启时 e.key 为 "Process"，0.12 因此按键全部无效）*/
+  const CODE = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyR: 'r', KeyV: 'v', KeyT: 't', KeyL: 'l', ArrowUp: 'arrowup', ArrowDown: 'arrowdown', ArrowLeft: 'arrowleft', ArrowRight: 'arrowright', Space: ' ' };
+  const keyOf = e => CODE[e.code] || (e.key && e.key.length === 1 ? e.key.toLowerCase() : (e.key || '').toLowerCase());
+  let lastKey = '-', imeSeen = false;
+  window.addEventListener('keydown', e => {
+    if (!active) return; const k = keyOf(e); if (e.key === 'Process' || e.keyCode === 229 || e.isComposing) imeSeen = true;
+    lastKey = (e.code || e.key) + (e.key === 'Process' ? '(IME)' : ''); keysN[k] = true; log('key', k);
+    if (!e.repeat) { if (k === 'r') reset(); if (k === 'v') cockpit = !cockpit; if (k === 't') auto = !auto; if (k === 'l') exportLog() }
+    if (/^(w|a|s|d|arrow.*| )$/.test(k)) { e.preventDefault(); e.stopImmediatePropagation() }   // 不让旧页面的按键处理（视角/暂停等）同时响应
+    if (/^(w|a|s|d|arrowup|arrowdown|arrowleft|arrowright)$/.test(k)) auto = false
+  }, true);
+  window.addEventListener('keyup', e => { keysN[keyOf(e)] = false }, true);
+  window.addEventListener('blur', () => { for (const k in keysN) keysN[k] = false });   // 切走窗口时松开所有键，避免“卡住油门”
+  /* 驾驶记录（人工驾驶测试用）：每 0.1 s 一条 + 按键 + 事件；按 L 或“导出记录”按钮下载 JSON */
+  let rec = [], recT = 0, simT = 0;
+  function log(kind, data) { if (rec.length < 200000) rec.push({ t: +simT.toFixed(2), kind, data }) }
+  function exportLog() { try { const blob = new Blob([JSON.stringify({ app: 'netdrive', version: 'Beta 0.13', exportedAt: new Date().toISOString(), userAgent: navigator.userAgent, three: window.THREE && THREE.REVISION, deps: window.__depSource || null, note: '人工驾驶记录：由页面自动采样，测试结论需结合人工填写的记录表', records: rec }, null, 0)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'drive_log_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove() }, 1000) } catch (err) { showErr('导出失败: ' + err.message) } }
+  let errMsg = null, errCount = 0;
+  function showErr(m) { errMsg = m; errCount++; console.error('[netdrive] ' + m); if (hudEl) { hudEl.style.display = 'block'; hudEl.style.background = 'rgba(140,0,0,.85)'; hudEl.textContent = '路网驾驶出错（请截图发给开发者）:\n' + m } }
+  let reqGear = 'D', sHold = 0;
+  window.__netFrame = function (dt) {
+    try { frameInner(dt) } catch (err) { if (errCount < 3 || !errMsg) showErr((err && err.stack || String(err)).slice(0, 600)); try { renderer.render(scene, camera) } catch (e2) { } }
+  };
+  function frameInner(dt) {
+    if (!sim) throw new Error('仿真未初始化（enter() 失败？）');
+    dt = Math.min(dt, .05); simT += dt; const K = keysN, v = sim.veh; let c;
+    if (auto) { c = agent(v, sim.cur); c.gear = 'D' }
+    else {
+      const tgt = ((K.d || K.arrowright) ? 1 : 0) - ((K.a || K.arrowleft) ? 1 : 0); steerS += (tgt - steerS) * Math.min(1, dt * 6);
+      const up = !!(K.w || K.arrowup), dn = !!(K.s || K.arrowdown), stopped = Math.abs(v.speed) < .3;
+      // 挡位：停稳后按住 S 0.3 s → R；停稳后按 W → D。D 挡 W=油门 S=刹车；R 挡 S=倒车油门 W=刹车。倒车 ≠ 逆行。
+      sHold = dn && stopped ? sHold + dt : 0;
+      if (stopped && v.gear === 'D' && sHold > .3) reqGear = 'R'; if (stopped && v.gear === 'R' && up) reqGear = 'D';
+      const R = v.gear === 'R';
+      c = { throttle: R ? (dn ? 1 : 0) : (up ? 1 : 0), brake: R ? (up ? 1 : 0) : (dn ? 1 : 0), steer: steerS, gear: reqGear };
+    }
+    const x0 = v.x, z0 = v.z; sim.step(c, dt); info.frames++; info.maxJump = Math.max(info.maxJump, Math.hypot(v.x - x0, v.z - z0));
+    for (const e of sim.events) { info.events[e.type] = (info.events[e.type] || 0) + 1; if (e.type !== 'wrong-way') log('event', e) }
+    recT += dt; if (recT >= .1) { recT = 0; log('state', { seg: sim.cur.seg, s: +sim.cur.s.toFixed(2), lat: +sim.cur.lat.toFixed(2), y: +v.y.toFixed(2), kmh: +(v.speed * 3.6).toFixed(1), gear: v.gear, steer: +c.steer.toFixed(2), thr: c.throttle, brk: c.brake, auto, ...sim.state }) }
+    const h = v.heading, fx = Math.cos(h), fz = Math.sin(h);
+    player.visible = !cockpit || !!camOverride; player.position.set(v.x, v.y + .05, v.z); player.rotation.y = Math.atan2(fx, fz);
+    if (camOverride) { camera.position.set(...camOverride.eye); camera.lookAt(...camOverride.look) }
+    else if (cockpit) { camera.position.set(v.x + fx * .1 - fz * .38, v.y + 1.3, v.z + fz * .1 + fx * .38); camera.lookAt(v.x + fx * 25, v.y + 1.2, v.z + fz * 25) }
+    else {
+      const tgt = new THREE.Vector3(v.x - fx * 9, v.y + 4.2, v.z - fz * 9); camera.position.lerp(tgt, 1 - Math.pow(.001, dt));
+      clampCamera(v); camera.lookAt(v.x + fx * 12, v.y + 1.4, v.z + fz * 12)
+    }
+    const w = $('game').clientWidth, hh = $('game').clientHeight; if (w && hh) { const px = renderer.getPixelRatio(); if (renderer.domElement.width !== Math.round(w * px) || renderer.domElement.height !== Math.round(hh * px)) { renderer.setSize(w, hh, false); camera.aspect = w / hh; camera.updateProjectionMatrix() } }
+    renderer.render(scene, camera);
+    $('speed').textContent = Math.round(Math.abs(v.speed) * 3.6);
+    const st = sim.state || {}, warn = st.wrongWay ? '\n⚠ 逆行！（单行道路禁止方向）' : st.reversing ? (st.againstFlow ? '\n倒车中（与通行方向相反）' : '\n倒车中') : '';
+    hudEl.style.background = st.wrongWay ? 'rgba(170,20,20,.8)' : 'rgba(0,0,0,.6)';
+    hudEl.textContent = `seg ${sim.cur.seg}  s=${sim.cur.s.toFixed(0)}  lat=${sim.cur.lat.toFixed(1)}\nspeed ${(v.speed * 3.6).toFixed(0)} km/h  挡 ${v.gear}  y=${v.y.toFixed(1)}\n${auto ? '自动驾驶' : '手动'} · 最近按键 ${lastKey}${imeSeen ? '（检测到输入法，已按物理键处理）' : ''}\n事件 ${Object.entries(info.events).filter(e => e[0] !== 'wrong-way').map(e => e.join(':')).join(' ') || '-'}${warn}\nW 油门 S 刹车/停稳后倒车 A/D 转向 R 重置 V 视角 T 自动 L 导出记录`;
+    hudEl.style.whiteSpace = 'pre';
+  }
+  /* 追随相机：不进入地面以下，不穿过上方或下方的桥面（在桥面下方时压到桥底以下，在桥面上方时抬到桥面以上）*/
+  function clampCamera(v) {
+    const cp = camera.position; if (cp.y < .6) cp.y = .6;
+    for (const [id, seg] of scen.net.segs) {
+      let q; try { q = scen.net.project(id, cp.x, cp.z) } catch (e) { continue }
+      if (!q || q.sRaw < 0 || q.sRaw > seg.length || Math.abs(q.lat) > seg.road.width(q.s) / 2 + .5 || seg.road.type(q.s) !== 'elevated') continue;
+      const top = q.y + .3, bot = q.y - .8 - .3;   // 桥面厚 0.8 m（与 roadmesh 默认 thick 一致）
+      if (cp.y > bot && cp.y < top) cp.y = v.y < q.y - 1 ? bot : top;   // 车在桥下 → 相机留在桥下；否则在桥面以上
+    }
+  }
+  const b = document.createElement('button'); b.id = 'netQuick'; b.className = 'primary'; b.style.cssText = 'position:absolute;left:14px;top:142px;z-index:860;padding:8px 12px'; b.textContent = '🧪 路网驾驶(实验)'; b.onclick = () => { active ? leave() : enter(); b.blur() }; $('game').appendChild(b);
+  const logBtn = document.createElement('button'); logBtn.id = 'netLog'; logBtn.textContent = '💾 导出驾驶记录'; logBtn.style.cssText = 'position:absolute;left:190px;top:142px;z-index:860;padding:8px 12px;display:none'; logBtn.onclick = () => { exportLog(); logBtn.blur() }; $('game').appendChild(logBtn);
+  window.__dbg = { get active() { return active }, get sim() { return sim }, get net() { return scen && scen.net }, info, get stats() { return info.meshStats }, renderInfo: () => ({ calls: +renderer.info.render.calls, triangles: +renderer.info.render.triangles }), enter, leave, reset, setAuto: v => { auto = v }, setCamera: (eye, look) => { camOverride = eye ? { eye, look } : null } /* 仅供截图：不移动车辆 */, setCockpit: v => { cockpit = !!v }, keys: keysN,
+    get error() { return errMsg }, get log() { return rec }, exportLog, get lastKey() { return lastKey }, get imeSeen() { return imeSeen },
+    /* 分项检查（浏览器测试用）：场景/车辆/路网网格是否存在且在视野内；采样渲染像素判断是否画出了非单色画面 */
+    probe() {
+      const r = { sceneChildren: scene ? +scene.children.length : 0, netGroupInScene: !!(grp && grp.parent === scene), netMeshes: 0, netTriangles: 0, carVisible: false, carInView: false, pixels: null };
+      if (grp) grp.traverse(o => { if (o.isMesh) { r.netMeshes++; const g = o.geometry; r.netTriangles += g.index ? +g.index.count / 3 : (g.attributes.position ? +g.attributes.position.count / 3 : 0) } });
+      if (player) { let vis = true; player.traverseAncestors(a => { if (!a.visible) vis = false }); r.carVisible = !!(player.visible && vis); let meshes = 0; player.traverse(o => { if (o.isMesh) meshes++ }); r.carMeshes = meshes;
+        const p = new THREE.Vector3(); player.getWorldPosition(p); p.project(camera); r.carNDC = [+(+p.x).toFixed(2), +(+p.y).toFixed(2), +(+p.z).toFixed(3)]; r.carInView = Math.abs(+p.x) <= 1 && Math.abs(+p.y) <= 1 && +p.z > -1 && +p.z < 1 }
+      try { renderer.render(scene, camera); const gl = renderer.getContext(), W = +gl.drawingBufferWidth, H = +gl.drawingBufferHeight, px = new Uint8Array(4), cols = new Set(); let n = 0;
+        for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) { gl.readPixels(Math.floor(W * i / 10), Math.floor(H * j / 10), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); cols.add(px.join(',')); n++ }
+        r.pixels = { samples: n, distinctColors: cols.size } } catch (e) { r.pixels = { error: String(e) } }
+      return r } };
+  if (typeof location !== 'undefined' && location.hash === '#net') setTimeout(enter, 300);
+})();
+
+/*NETGLUE-END*/
+
+})();
+</script>
+</body>
+</html>
